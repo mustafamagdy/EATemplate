@@ -1,8 +1,8 @@
 #include "TradingBasket.mqh";
-#include "Candles\Candlestick.mqh";
+#include "Candles\CandleTypes.mqh";
 
 TradingBasket _basket;
-CCandlePatterns _cPtr;
+CCandleTypes _candleType;
 
 bool IsNewBar(ENUM_TIMEFRAMES timeframe = PERIOD_CURRENT, string symbol = NULL)
 {
@@ -32,6 +32,9 @@ void OnTick()
          //_basket.CloseBasketOrders();
         }
         
+        CANDLE_STRUCTURE res;
+        _candleType.RecognizeCandle(PERIOD_CURRENT, 0, 2, res);
+
         double price = SymbolInfoDouble(_Symbol, SYMBOL_BID);       
        
         

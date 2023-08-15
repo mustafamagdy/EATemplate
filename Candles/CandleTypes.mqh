@@ -1,38 +1,41 @@
 #property copyright "Copyright 2023, Aditek Trading."
-#property link      "https://www.aditektrading.com"
-#property version   "1.00"
+#property link "https://www.aditektrading.com"
+#property version "1.00"
 
 //+------------------------------------------------------------------+
 //| Include                                                          |
 //+------------------------------------------------------------------+
 #include "Definitions.mqh"
 
-
 //+------------------------------------------------------------------+
 //|  Class CCandleTypes                                              |
 //+------------------------------------------------------------------+
-class CCandleTypes 
+class CCandleTypes
 {
-    public:
-        void        CCandleTypes();
-        void        ~CCandleTypes();
-        bool        RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, int aver_period, CANDLE_STRUCTURE &res);
+public:
+    void CCandleTypes();
+    void ~CCandleTypes();
+    bool RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, int aver_period, CANDLE_STRUCTURE &res);
 };
 
-
-  // constructor
-void CCandleTypes::CCandleTypes(void) {};
+// constructor
+void CCandleTypes::CCandleTypes(void){};
 
 // deconstructor
-void CCandleTypes::~CCandleTypes(void) {};
+void CCandleTypes::~CCandleTypes(void){};
 
-// Function of recognition of candlestick type                      
+// Function of recognition of candlestick type
 bool CCandleTypes::RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, int aver_period, CANDLE_STRUCTURE &res)
 {
-   if(aver_period < 1) aver_period = 1;
+    if (aver_period < 1)
+    {
+        aver_period = 1;
+    }
+
     MqlRates rates[];
     // Get data of previous candlesticks
-    if(CopyRates(_Symbol, period, start_position, aver_period + 1, rates) < aver_period) return(false);
+    if (CopyRates(_Symbol, period, start_position, aver_period + 1, rates) < aver_period)
+        return (false);
 
     res.open = rates[aver_period].open;
     res.high = rates[aver_period].high;
@@ -45,10 +48,13 @@ bool CCandleTypes::RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, i
     for (int i = 0; i < aver_period; i++)
         aver += rates[i].close;
     aver = aver / aver_period;
-   
-    if (aver < res.close) res.trend = UPPER;
-    if (aver > res.close) res.trend = DOWN;
-    if (aver == res.close) res.trend = LATERAL;
+
+    if (aver < res.close)
+        res.trend = UPPER;
+    if (aver > res.close)
+        res.trend = DOWN;
+    if (aver == res.close)
+        res.trend = LATERAL;
 
     // Define of it bullish or bearish
     res.bull = res.open < res.close;
@@ -62,8 +68,8 @@ bool CCandleTypes::RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, i
 
     if (res.bull)
     {
-      shade_low = res.open - res.low;
-      shade_high = res.high - res.close;
+        shade_low = res.open - res.low;
+        shade_high = res.high - res.close;
     }
     double HL = res.high - res.low;
 
@@ -71,27 +77,35 @@ bool CCandleTypes::RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, i
     double sum = 0;
     for (int i = 1; i <= aver_period; i++)
         sum = sum + MathAbs(rates[i].open - rates[i].close);
-    sum=sum/aver_period;
-
-    // Determine type of candlestick   
+    sum = sum / aver_period;
+    
+    // Determine type of candlestick
     res.type = CAND_NONE;
-    // long 
-    if (res.bodysize > sum * 1.3) res.type = CAND_LONG;
-    // shorates 
-    if (res.bodysize < sum * 0.5) res.type = CAND_SHORT;
+    // long
+    if (res.bodysize > sum * 1.3)
+        res.type = CAND_LONG;
+    // shorates
+    if (res.bodysize < sum * 0.5)
+        res.type = CAND_SHORT;
     // doji
-    if (res.bodysize < HL * 0.03) res.type = CAND_DOJI;
+    if (res.bodysize < HL * 0.03)
+        res.type = CAND_DOJI;
     // maribozu
     if ((shade_low < res.bodysize * 0.01 || shade_high < res.bodysize * 0.01) && res.bodysize > 0)
         res.type = (res.type == CAND_LONG) ? res.type = CAND_MARIBOZU_LONG : res.type = CAND_MARIBOZU;
     // hammer
-    if (shade_low > res.bodysize * 2 && shade_high < res.bodysize * 0.1) res.type = CAND_HAMMER;
-    if (res.type == CAND_HAMMER && shade_low > sum * 1.3) res.type = CAND_HAMMER_LONG;
+    if (shade_low > res.bodysize * 2 && shade_high < res.bodysize * 0.1)
+        res.type = CAND_HAMMER;
+    if (res.type == CAND_HAMMER && shade_low > sum * 1.3)
+        res.type = CAND_HAMMER_LONG;
     // inverted hammer
-    if (shade_low < res.bodysize * 0.1 && shade_high > res.bodysize * 2) res.type = CAND_INVERT_HAMMER;
-    if (res.type == CAND_INVERT_HAMMER && shade_high > sum * 1.3) res.type = CAND_INVERT_HAMMER_LONG;
+    if (shade_low < res.bodysize * 0.1 && shade_high > res.bodysize * 2)
+        res.type = CAND_INVERT_HAMMER;
+    if (res.type == CAND_INVERT_HAMMER && shade_high > sum * 1.3)
+        res.type = CAND_INVERT_HAMMER_LONG;
     // spinning top
-    if (res.type == CAND_SHORT && shade_low > res.bodysize && shade_high > res.bodysize) res.type = CAND_SPIN_TOP;
+    if (res.type == CAND_SHORT && shade_low > res.bodysize && shade_high > res.bodysize)
+        res.type = CAND_SPIN_TOP;
     ArrayFree(rates);
     return true;
 }
