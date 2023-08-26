@@ -42,6 +42,10 @@ bool CCandleTypes::RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, i
     res.low = rates[aver_period].low;
     res.close = rates[aver_period].close;
     res.time = rates[aver_period].time;
+    // Get the absolute value of the candlestick body size
+    res.bodysize = MathAbs(rates[aver_period].open - rates[aver_period].close);
+    // Define of it bullish or bearish
+    res.bull = rates[aver_period].open < rates[aver_period].close;
 
     // Define the trend direction
     double aver = 0;
@@ -55,12 +59,6 @@ bool CCandleTypes::RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, i
         res.trend = DOWN;
     if (aver == res.close)
         res.trend = LATERAL;
-
-    // Define of it bullish or bearish
-    res.bull = res.open < res.close;
-
-    // Get the absolute value of the candlestick body size
-    res.bodysize = MathAbs(res.open - res.close);
 
     // Get the size of shadows
     double shade_low = res.close - res.low;
@@ -78,7 +76,7 @@ bool CCandleTypes::RecognizeCandle(ENUM_TIMEFRAMES period, int start_position, i
     for (int i = 1; i <= aver_period; i++)
         sum = sum + MathAbs(rates[i].open - rates[i].close);
     sum = sum / aver_period;
-    
+
     // Determine type of candlestick
     res.type = CAND_NONE;
     // long

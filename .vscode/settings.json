@@ -2,5 +2,9 @@
     "C_Cpp.default.includePath": [
         "c:\\Users\\musta\\AppData\\Roaming\\MetaQuotes\\Terminal\\53785E099C927DB68A545C249CDBCE06\\MQL5\\Include\\Include",
         "c:\\Users\\musta\\AppData\\Roaming\\MetaQuotes\\Terminal\\53785E099C927DB68A545C249CDBCE06\\MQL5\\Include"
-    ]
+    ],
+    "files.associations": {
+        "*.mq5": "cpp",
+        "*.mqh": "cpp"
+    }
 }

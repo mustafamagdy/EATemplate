@@ -1,5 +1,6 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
+#include <Object.mqh>
 
 enum ENUM_BASKET_STATUS
 {
@@ -8,7 +9,7 @@ enum ENUM_BASKET_STATUS
     BASKET_CLOSED = 2
 };
 
-class Trade
+struct Trade
 {
 private:
     ulong _ticket;
@@ -22,10 +23,9 @@ private:
     string _comment;
 
 public:
-    Trade() {}
-    Trade(ulong ticket, long magicNumber, string symbol,
-          double openPrice, double volume, double fees,
-          double sLPrice, double tPPrice, string comment)
+    void Init(ulong ticket, long magicNumber, string symbol,
+              double openPrice, double volume, double fees,
+              double sLPrice, double tPPrice, string comment)
     {
         _ticket = ticket;
         _magicNumber = magicNumber;
@@ -50,7 +50,7 @@ public:
     string Comment() const { return _comment; }
 };
 
-class TradingBasket
+class TradingBasket : CObject
 {
 private:
     CTrade _trade;
@@ -117,9 +117,11 @@ public:
 
         if (result.retcode > 0)
         {
-            Trade *trade = new Trade(result.order, _trade.RequestMagic(), _trade.RequestSymbol(),
-                                     result.price, result.volume, 0,
-                                     _trade.RequestSL(), _trade.RequestTP(), result.comment);
+            Trade trade;
+            trade.Init(result.order, _trade.RequestMagic(), _trade.RequestSymbol(), 
+                        result.price, result.volume, 0, _trade.RequestSL(), _trade.RequestTP(), 
+                        result.comment);
+
             ArrayResize(_trades, ArraySize(_trades) + 1);
             _trades[ArraySize(_trades) - 1] = trade;
 
@@ -209,6 +211,11 @@ public:
             {
                 ArrayRemove(_trades, i, 1);
             }
+        }
+
+        if (ArraySize(_trades) == 0)
+        {
+            _basketStatus = BASKET_OPEN;
         }
     }
 
