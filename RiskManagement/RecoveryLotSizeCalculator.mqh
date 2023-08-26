@@ -1,8 +1,7 @@
 #include "LotSizeCalculatorBase.mqh";
 #include "NormalLotSizeCalculator.mqh";
-#include "..\Trade\PositionInfoCustom.mqh";
-#include  "..\Common.mqh";
-#include "..\Common\RecoveryParameters.mqh"
+#include "..\Constants.mqh";
+#include "..\Enums.mqh";
 
 #property strict
 
@@ -13,31 +12,34 @@
 */
 class CRecoveryLotSizeCalculator : public CLotSizeCalculatorBase {
 
-private:
-   CPositionInfoCustom        *mPositionInfo;
+private:   
    CNormalLotSizeCalculator   *mNormalLotSizeCalc;
+   ENUM_RECOVERY_LOT_SIZE_MODE _recoveryLotSizeMode;
+   double _recoveryFixedLotSize;
+   string _recoveryLotSeries;
+   ENUM_RECOVERY_FIXED_CUSTOM_MODE _martingalCustomLotMode;
 
 private:
-   double CalculateNextLot(string series, int lastOrderNumber, bool rolling);
-   double CalculateNextLotMultiplier(double lastLot, string series, int lastOrderNumber);
+   double CalculateNextLot(string symbol, string series, int lastOrderNumber, bool rolling);
+   double CalculateNextLotMultiplier(string symbol, double lastLot, string series, int lastOrderNumber);
    
 protected:
 
 public:
-   CRecoveryLotSizeCalculator(CPositionInfoCustom *positionInfo);
+   CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc);
    ~CRecoveryLotSizeCalculator();
       
 public:
-   double CalculateLotSize(const int riskPoints, const ENUM_ORDER_TYPE orderType);
-   double CalculateLotSize(const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType);
-   double CalculateLotSize(const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType);
+   double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType);
+   double CalculateLotSize(string symbol, const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType);
+   double CalculateLotSize(string symbol, const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType);
 };
 
 
-double CRecoveryLotSizeCalculator::CalculateLotSize(const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType) {
+double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType) {
    //For the first order, use the normal method
    if(orderCount == 0) {      
-      double normalLot = mNormalLotSizeCalc.CalculateLotSize(riskPoints, orderType);     
+      double normalLot = mNormalLotSizeCalc.CalculateLotSize(symbol, riskPoints, orderType);     
       return normalLot;
    }
    
@@ -48,39 +50,39 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(const int riskPoints, double
    
    //utils.LogVerbose(__FUNCTION__, StringFormat("Using %s current lot %f , order count %i", EnumToString(RecoveryLotSizeMode), lastLot, count));
    
-   switch(RecoveryLotSizeMode) {
-      case LOT_FIXED: return NormalizeLot(RecoveryFixedLotSize);
-      case LOT_ADD: return NormalizeLot(lastLot + RecoveryFixedLotSize);
-      case LOT_FIXED_CUSTOM: {
-         switch(MartingalCustomLotMode) {
-            case LOT_CUSTOM_SERIES: {
-                 double nextLotInSeries = CalculateNextLot(RecoveryLotSeries, count, false);
-                 return NormalizeLot(nextLotInSeries);
+   switch(_recoveryLotSizeMode) {
+      case RECOVERY_LOT_FIXED: return NormalizeLot(symbol, _recoveryFixedLotSize);
+      case RECOVERY_LOT_ADD: return NormalizeLot(symbol, lastLot + _recoveryFixedLotSize);
+      case RECOVERY_LOT_FIXED_CUSTOM: {
+         switch(_martingalCustomLotMode) {
+            case RECOVERY_LOT_CUSTOM_SERIES: {
+                 double nextLotInSeries = CalculateNextLot(symbol, _recoveryLotSeries, count, false);
+                 return NormalizeLot(symbol, nextLotInSeries);
             }
-            case LOT_CUSTOM_ROLLING: {
-                 double nextLotInSeries = CalculateNextLot(RecoveryLotSeries, count, true);
-                 return NormalizeLot(nextLotInSeries);
+            case RECOVERY_LOT_CUSTOM_ROLLING: {
+                 double nextLotInSeries = CalculateNextLot(symbol, _recoveryLotSeries, count, true);
+                 return NormalizeLot(symbol, nextLotInSeries);
             }
-            case LOT_CUSTOM_MULTIPLIER: {
-                 double nextLotInSeries = CalculateNextLotMultiplier(lastLot, RecoveryLotSeries, count);
-                 return NormalizeLot(nextLotInSeries);
+            case RECOVERY_LOT_CUSTOM_MULTIPLIER: {
+                 double nextLotInSeries = CalculateNextLotMultiplier(symbol, lastLot, _recoveryLotSeries, count);
+                 return NormalizeLot(symbol, nextLotInSeries);
             }
          }
       }
    }
      
-   return utils._MinLot();   
+   return constants.MinLot(symbol);
 }
 
-double CRecoveryLotSizeCalculator::CalculateLotSize(const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType) {
-   int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice-slPrice), utils._TheDigits()) / utils._ThePoint());
-   return CalculateLotSize(points, 0, 0, orderType);   
+double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType) {
+   int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice-slPrice), _Digits) / _Point);
+   return CalculateLotSize(symbol, points, 0, 0, orderType);   
 }
 
-double CRecoveryLotSizeCalculator::CalculateNextLot(string series, int lastOrderNumber, bool rolling) {
+double CRecoveryLotSizeCalculator::CalculateNextLot(string symbol, string series, int lastOrderNumber, bool rolling) {
    string arSeries[];
    double values[];
-   ushort sep = StringGetCharacter(SEPARATOR, 0);
+   ushort sep = StringGetCharacter(constants.Separator(), 0);
    int count = StringSplit(series, sep, arSeries);
    if(count > 0) {
       int size = ArraySize(arSeries);
@@ -99,13 +101,13 @@ double CRecoveryLotSizeCalculator::CalculateNextLot(string series, int lastOrder
       }
    }
    
-   return utils._MinLot();
+   return constants.MinLot(symbol);
 }
 
-double CRecoveryLotSizeCalculator::CalculateNextLotMultiplier(double lastLot, string series, int lastOrderNumber) {
+double CRecoveryLotSizeCalculator::CalculateNextLotMultiplier(string symbol, double lastLot, string series, int lastOrderNumber) {
    string arSeries[];
    double values[];
-   ushort sep = StringGetCharacter(SEPARATOR, 0);
+   ushort sep = StringGetCharacter(constants.Separator(), 0);
    int count = StringSplit(series, sep, arSeries);
    double multiplier = 1;
    if(count > 0) {
@@ -124,21 +126,18 @@ double CRecoveryLotSizeCalculator::CalculateNextLotMultiplier(double lastLot, st
    }
    
    double result = lastLot * multiplier;
-   //utils.LogVerbose(__FUNCTION__, StringFormat("current lot %f, series %s, order number %i multiplier %f new lot %f", lastLot, series, lastOrderNumber, multiplier, result));
    return result;
 }
 
-double CRecoveryLotSizeCalculator::CalculateLotSize(const int riskPoints, const ENUM_ORDER_TYPE orderType) {
-   return CalculateLotSize(riskPoints, 0, 0, orderType);
+double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType) {
+   return CalculateLotSize(symbol, riskPoints, 0, 0, orderType);
 }
 
-CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CPositionInfoCustom *positionInfo)
-          : CLotSizeCalculatorBase() {
-   mPositionInfo        = positionInfo;
-   mNormalLotSizeCalc   = new CNormalLotSizeCalculator();
+CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc)
+          : CLotSizeCalculatorBase() { 
+   mNormalLotSizeCalc   = normalLotSizeCalc;
 }
 
 CRecoveryLotSizeCalculator::~CRecoveryLotSizeCalculator() {
-   SafeDeletePointer(mPositionInfo);
-   SafeDeletePointer(mNormalLotSizeCalc);
+   delete mNormalLotSizeCalc;
 }
