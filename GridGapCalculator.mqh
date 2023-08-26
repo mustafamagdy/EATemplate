@@ -32,8 +32,13 @@ private:
     int _gridATRMin;                                 // ATR Minimum GAP (Points, 0=No Min)
     int _gridATRMax;                                 // ATR Maximum GAP (Points, 0=No Max)
 
+private:
+   CConstants constants;
+   
 protected:
     int NormalizeATRGridValue(double gridSize);
+    int CalculateNextSize(string series, int lastOrderNumber, bool rolling);
+    int CalculateNextSizeMultiplier(int lastSize, string series, int lastOrderNumber);
     
 public:
     CGridGapCalculator(ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
@@ -97,11 +102,11 @@ int CGridGapCalculator::CalculateNextOrderDistance(int orderCount, double lastOr
     return _MinSize();
 }
 
-int CalculateNextSize(string series, int lastOrderNumber, bool rolling)
+int CGridGapCalculator::CalculateNextSize(string series, int lastOrderNumber, bool rolling)
 {
     string arSeries[];
     int values[];
-    ushort sep = StringGetCharacter(SEPARATOR, 0);
+    ushort sep = StringGetCharacter(constants.Separator(), 0);
     int count = StringSplit(series, sep, arSeries);
     if (count > 0)
     {
@@ -130,11 +135,11 @@ int CalculateNextSize(string series, int lastOrderNumber, bool rolling)
     return _MinSize();
 }
 
-int CalculateNextSizeMultiplier(int lastSize, string series, int lastOrderNumber)
+int CGridGapCalculator::CalculateNextSizeMultiplier(int lastSize, string series, int lastOrderNumber)
 {
     string arSeries[];
     double values[];
-    ushort sep = StringGetCharacter(SEPARATOR, 0);
+    ushort sep = StringGetCharacter(constants.Separator(), 0);
     int count = StringSplit(series, sep, arSeries);
     double multiplier = 1;
     if (count > 0)
