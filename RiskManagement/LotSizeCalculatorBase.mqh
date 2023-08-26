@@ -22,9 +22,9 @@ public:
    ~CLotSizeCalculatorBase(){};
 
 public:
-   virtual double CalculateLotSize(const int riskPoints, const ENUM_ORDER_TYPE orderType = -1) = NULL;
-   virtual double CalculateLotSize(const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType = -1) = NULL;
-   virtual double CalculateLotSize(const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType = -1) = NULL;
+   virtual double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1) = NULL;
+   virtual double CalculateLotSize(string symbol, const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType = -1) = NULL;
+   virtual double CalculateLotSize(string symbol, const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType = -1) = NULL;
 
    double NormalizeLot(string symbol, double lots);
 };

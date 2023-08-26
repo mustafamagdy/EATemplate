@@ -14,7 +14,6 @@ private:
    double _xBalance;
    double _lotPerXBalance;
 
-protected:
 public:
    CNormalLotSizeCalculator(
        ENUM_RISK_TYPE riskType,

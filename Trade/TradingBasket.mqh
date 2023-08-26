@@ -86,9 +86,19 @@ public:
         _UpdateAvgSlForBasketTrades();
     }
 
-    void AddTrade(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints = 0, int tpPoints = 0, string comment = "")
+    bool AddTradeWithPoints(string symbol, double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message)
     {
         double slPrice = 0, tpPrice = 0;
+        double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+        double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+        double spread = ask - bid;
+        int spread_points = (int)MathRound(spread / SymbolInfoDouble(Symbol(), SYMBOL_POINT));
+        if (slPoints <= spread_points)
+        {
+            message = "SL points is less than the spread points";
+            return (false);
+        }
+        
         if (orderType == ORDER_TYPE_BUY)
         {
             slPrice = slPoints > 0 ? price - (slPoints * _Point) : 0;
@@ -100,15 +110,16 @@ public:
             tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
         }
 
-        AddTrade(volume, price, orderType, slPrice, tpPrice, comment);
+        return AddTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message);
     }
 
-    void AddTrade(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice = 0, double tpPrice = 0, string comment = "")
+    bool AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message)
     {
         if (_basketStatus != BASKET_OPEN)
         {
             // TODO: error reporting
-            return;
+            message = StringFormat("Basket is %s, cannot receive orders now", _basketStatus);
+            return (false);
         }
 
         MqlTradeResult result;
@@ -118,9 +129,9 @@ public:
         if (result.retcode > 0)
         {
             Trade trade;
-            trade.Init(result.order, _trade.RequestMagic(), _trade.RequestSymbol(), 
-                        result.price, result.volume, 0, _trade.RequestSL(), _trade.RequestTP(), 
-                        result.comment);
+            trade.Init(result.order, _trade.RequestMagic(), _trade.RequestSymbol(),
+                       result.price, result.volume, 0, _trade.RequestSL(), _trade.RequestTP(),
+                       result.comment);
 
             ArrayResize(_trades, ArraySize(_trades) + 1);
             _trades[ArraySize(_trades) - 1] = trade;
@@ -131,7 +142,11 @@ public:
         else
         {
             // TODO
+            message = StringFormat("Order failed: %s", result.retcode);
+            return (false);
         }
+
+        return (true);
     }
 
     double Volume()

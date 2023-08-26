@@ -47,9 +47,7 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
    if(orderCount > 1) {
       count = orderCount - 1;//Ignore the first order (orignal order)
    }
-   
-   //utils.LogVerbose(__FUNCTION__, StringFormat("Using %s current lot %f , order count %i", EnumToString(RecoveryLotSizeMode), lastLot, count));
-   
+      
    switch(_recoveryLotSizeMode) {
       case RECOVERY_LOT_FIXED: return NormalizeLot(symbol, _recoveryFixedLotSize);
       case RECOVERY_LOT_ADD: return NormalizeLot(symbol, lastLot + _recoveryFixedLotSize);
