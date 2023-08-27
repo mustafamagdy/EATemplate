@@ -1,5 +1,5 @@
-#include "LotSizeCalculatorBase.mqh";
-#include "NormalLotSizeCalculator.mqh";
+#include "..\RiskManagement\LotSizeCalculatorBase.mqh";
+#include "..\RiskManagement\NormalLotSizeCalculator.mqh";
 #include "..\Constants.mqh";
 #include "..\Enums.mqh";
 
