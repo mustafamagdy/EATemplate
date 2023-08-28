@@ -13,7 +13,7 @@
 class CRecoveryLotSizeCalculator : public CLotSizeCalculatorBase {
 
 private:   
-   CNormalLotSizeCalculator   *mNormalLotSizeCalc;
+   CNormalLotSizeCalculator   *_mormalLotSizeCalc;
    ENUM_RECOVERY_LOT_SIZE_MODE _recoveryLotSizeMode;
    double _recoveryFixedLotSize;
    string _recoveryLotSeries;
@@ -39,7 +39,7 @@ public:
 double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType) {
    //For the first order, use the normal method
    if(orderCount == 0) {      
-      double normalLot = mNormalLotSizeCalc.CalculateLotSize(symbol, riskPoints, orderType);     
+      double normalLot = _mormalLotSizeCalc.CalculateLotSize(symbol, riskPoints, orderType);     
       return normalLot;
    }
    
@@ -133,9 +133,9 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
 
 CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc)
           : CLotSizeCalculatorBase() { 
-   mNormalLotSizeCalc   = normalLotSizeCalc;
+   _mormalLotSizeCalc   = normalLotSizeCalc;
 }
 
 CRecoveryLotSizeCalculator::~CRecoveryLotSizeCalculator() {
-   delete mNormalLotSizeCalc;
+   delete _mormalLotSizeCalc;
 }

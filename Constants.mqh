@@ -25,4 +25,6 @@ public:
     static const double MinLot(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN); }
     static const double MaxLot(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX); }
     static const double LotStep(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP); }
+    static const double Ask(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_ASK); }
+    static const double Bid(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_BID); }
 };

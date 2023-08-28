@@ -1,6 +1,6 @@
 #include <Object.mqh>
-#include "Enums.mqh";
-#include "Constants.mqh";
+#include "..\Enums.mqh";
+#include "..\Constants.mqh";
 
 #property strict
 
