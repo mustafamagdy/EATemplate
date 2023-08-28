@@ -12,6 +12,8 @@ private:
     double _fees;
     double _sLPrice;
     double _tPPrice;
+    double _originalSLPrice;
+    double _originalTPPrice;
     string _comment;
 
 public:
@@ -29,6 +31,8 @@ public:
         _fees = fees;
         _sLPrice = sLPrice;
         _tPPrice = tPPrice;
+        _originalSLPrice = sLPrice;
+        _originalTPPrice = tPPrice;
         _comment = comment;
     }
 
@@ -42,5 +46,10 @@ public:
     double Fees() const { return _fees; }
     double StopLoss() const { return _sLPrice; }
     double TakeProfit() const { return _tPPrice; }
+    double OriginalStopLoss() const { return _originalSLPrice; }
+    double OriginalTakeProfit() const { return _originalTPPrice; }
     string Comment() const { return _comment; }
+
+    void SetStopLoss(double sLPrice) { _sLPrice = sLPrice; }
+    void SetTakeProfit(double tPPrice) { _tPPrice = tPPrice; }
 };

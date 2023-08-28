@@ -59,13 +59,14 @@ void CRecoveryManager::OnTick()
     if (_basket.Count() == 1)
     {
         _recoveryAvgTPrice = firstTrade.TakeProfit();
+        _basket.SetBasketAvgSlPrice(0);
     }
 
     double lastLot = lastTrade.Volume();
     double lastOpenPrice = lastTrade.OpenPrice();
     double firstOpenPrice = firstTrade.OpenPrice();
     double firstTradeTp = firstTrade.TakeProfit();
-    double lastTradeSL = firstTrade.StopLoss();
+    double lastTradeSL = lastTrade.OriginalStopLoss();
 
     string symbol = _basket.Symbol();
     double price = constants.Ask(symbol);
@@ -73,14 +74,12 @@ void CRecoveryManager::OnTick()
     if (price > _recoveryAvgTPrice)
     {
         _basket.CloseBasketOrders();
-        return;
     }
-    else if (price < lastTradeSL)
+    else if (price <= lastTradeSL)
     {
         if (_maxGridOrderCount != 0 && _basket.Count() >= _maxGridOrderCount)
         {
-            // Attempt to close all trades as reaching out max orders
-            _basket.CloseBasketOrders();
+            // Do nothing as we reached the max grid order count
             return;
         }
 
@@ -91,9 +90,13 @@ void CRecoveryManager::OnTick()
         // Check the recovery type here to know the next direction
         if (_recoveryMode == RECOVERY_MARTINGALE)
         {
-            double nextSLPrice = firstTradeTp - NormalizeDouble(nextGridGap * _Point, _Digits);
+            double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
             double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-            if (!_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message))
+            if (_basket.AddTradeWithPrice(nextLot, price, orderType, 0, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message))
+            {
+                _basket.SetBasketAvgSlPrice(nextSLPrice);
+            }
+            else
             {
                 // Failed to open a recovery trade
             }
@@ -102,11 +105,19 @@ void CRecoveryManager::OnTick()
         {
             double nextSLPrice = price + NormalizeDouble(nextGridGap * _Point, _Digits);
             double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-            if (!_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message))
+            if (_basket.AddTradeWithPrice(nextLot, price, orderType, 0, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message))
+            {
+                _basket.SetBasketAvgSlPrice(nextSLPrice);
+            }
+            else
             {
                 // Failed to open a recovery trade
             }
         }
+    }
+    else
+    {
+        //TODO
     }
 }
 

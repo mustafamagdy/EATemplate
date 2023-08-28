@@ -19,8 +19,8 @@ private:
     ENUM_BASKET_STATUS _basketStatus;
     long _magicNumber;
     string _symbol;
-    int _basketAvgTpPoints;
-    int _basketAvgSlPoints;
+    double _basketAvgTpPrice;
+    double _basketAvgSlPrice;
 
 public:
     CTradingBasket(string symbol, long magicNumber);
@@ -40,8 +40,8 @@ public:
     bool LastTrade(Trade &trade);
 
 public:
-    void SetBasketAvgTpPoints(int basketAvgTpPoints);
-    void SetBasketAvgSlPoints(int basketAvgSlPoints);
+    void SetBasketAvgTpPrice(double basketAvgTpPrice);
+    void SetBasketAvgSlPrice(double basketAvgSlPrice);
     bool AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message);
     bool AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message);
     void CloseBasketOrders();
@@ -66,15 +66,15 @@ CTradingBasket::~CTradingBasket()
     ArrayFree(_trades);
 }
 
-void CTradingBasket::SetBasketAvgTpPoints(int basketAvgTpPoints)
+void CTradingBasket::SetBasketAvgTpPrice(double basketAvgTpPrice)
 {
-    _basketAvgTpPoints = basketAvgTpPoints;
+    _basketAvgTpPrice = basketAvgTpPrice;
     _UpdateAvgTpForBasketTrades();
 }
 
-void CTradingBasket::SetBasketAvgSlPoints(int basketAvgSlPoints)
+void CTradingBasket::SetBasketAvgSlPrice(double basketAvgSlPrice)
 {
-    _basketAvgSlPoints = basketAvgSlPoints;
+    _basketAvgSlPrice = basketAvgSlPrice;
     _UpdateAvgSlForBasketTrades();
 }
 
@@ -129,9 +129,6 @@ bool CTradingBasket::AddTradeWithPrice(double volume, double price, ENUM_ORDER_T
         _trades[ArraySize(_trades) - 1] = trade;
 
         _basketStatus = BASKET_OPEN;
-
-        _UpdateAvgTpForBasketTrades();
-        _UpdateAvgSlForBasketTrades();
     }
     else
     {
@@ -266,54 +263,30 @@ void CTradingBasket::OnTick()
 
 void CTradingBasket::_UpdateAvgTpForBasketTrades()
 {
-    if (IsEmpty() || _basketAvgTpPoints == 0)
+    if (IsEmpty())
         return;
-
-    double avgPrice = AverageOpenPrice();
+    
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
         if (_position.SelectByTicket(ticket))
         {
-            double tpPrice = 0;
-
-            if (_position.PositionType() == POSITION_TYPE_BUY)
-            {
-                tpPrice = avgPrice + (_basketAvgTpPoints * _Point);
-            }
-            else
-            {
-                tpPrice = avgPrice - (_basketAvgTpPoints * _Point);
-            }
-
-            _trade.PositionModify(ticket, _position.StopLoss(), tpPrice);
+            _trade.PositionModify(ticket, _position.StopLoss(), _basketAvgTpPrice);
         }
     }
 }
 
 void CTradingBasket::_UpdateAvgSlForBasketTrades()
 {
-    if (IsEmpty() || _basketAvgTpPoints == 0)
+    if (IsEmpty())
         return;
 
-    double avgPrice = AverageOpenPrice();
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
         if (_position.SelectByTicket(ticket))
-        {
-            double slPrice = 0;
-
-            if (_position.PositionType() == POSITION_TYPE_BUY)
-            {
-                slPrice = avgPrice - (_basketAvgTpPoints * _Point);
-            }
-            else
-            {
-                slPrice = avgPrice + (_basketAvgTpPoints * _Point);
-            }
-
-            _trade.PositionModify(ticket, slPrice, _position.TakeProfit());
+        {            
+            _trade.PositionModify(ticket, _basketAvgSlPrice, _position.TakeProfit());
         }
     }
 }
