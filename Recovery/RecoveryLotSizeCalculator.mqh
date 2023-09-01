@@ -18,6 +18,7 @@ private:
    ENUM_RECOVERY_LOT_SIZE_MODE _recoveryLotSizeMode;
    double _recoveryFixedLotSize;
    string _recoveryLotSeries;
+   double _recoveryLotMultiplier;
    ENUM_RECOVERY_FIXED_CUSTOM_MODE _martingalCustomLotMode;
 
 private:
@@ -26,7 +27,9 @@ private:
 
 protected:
 public:
-   CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode, double recoveryFixedLotSize, string recoveryLotSeries, ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode);
+   CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
+                              double recoveryFixedLotSize, string recoveryLotSeries, double lotMultiplier,
+                              ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode);
    ~CRecoveryLotSizeCalculator();
 
 public:
@@ -56,6 +59,8 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
       return NormalizeLot(symbol, _recoveryFixedLotSize);
    case RECOVERY_LOT_ADD:
       return NormalizeLot(symbol, lastLot + _recoveryFixedLotSize);
+   case RECOVERY_LOT_MULTIPLIER:
+      return lastLot * _recoveryLotMultiplier;   
    case RECOVERY_LOT_FIXED_CUSTOM:
    {
       switch (_martingalCustomLotMode)
@@ -157,13 +162,16 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
    return CalculateLotSize(symbol, riskPoints, 0, 0, orderType);
 }
 
-CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode, double recoveryFixedLotSize, string recoveryLotSeries, ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode)
+CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc,
+                                                       ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode, double recoveryFixedLotSize, string recoveryLotSeries,
+                                                       double lotMultiplier, ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode)
     : CLotSizeCalculator()
 {
    _mormalLotSizeCalc = normalLotSizeCalc;
    _recoveryLotSizeMode = recoveryLotSizeMode;
    _recoveryFixedLotSize = recoveryFixedLotSize;
    _recoveryLotSeries = recoveryLotSeries;
+   _recoveryLotMultiplier = lotMultiplier;
    _martingalCustomLotMode = martingalCustomLotMode;
 }
 

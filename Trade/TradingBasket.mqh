@@ -29,6 +29,7 @@ public:
 public:
     double Volume();
     double Volume(ENUM_ORDER_TYPE orderType);
+    long MagicNumber() { return _magicNumber; }
     double AverageOpenPrice();
     double Profit();
     int Count();
@@ -177,7 +178,7 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
         message = StringFormat("Basket is %s, cannot receive orders now", EnumToString(_basketStatus));
         return (false);
     }
-
+    
     MqlTradeResult result;
     _trade.PositionOpen(Symbol(), orderType, volume, price, slPrice, tpPrice, comment);
     _trade.Result(result);

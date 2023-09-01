@@ -15,6 +15,8 @@ private:
     CRecoveryLotSizeCalculator *_recoveryLotCalc;
     CGridGapCalculator *_gridGapCalc;
     ENUM_RECOVERY_MODE _recoveryMode;
+    bool _showTpLine;
+    bool _useVirtualSLTP;
     double _recoveryTpPoints;
     double _recoveryAvgTPrice;
     int _maxGridOrderCount;
@@ -24,7 +26,8 @@ public:
                                        int maxGridOrderCount, ENUM_RECOVERY_MODE recoveryMode, double recoveryTpPoints,
                                        ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize, ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode,
                                        string gridCustomSeries, int gridATRPeriod, ENUM_VALUE_ACTION gridATRValueAction, double gridATRValue,
-                                       int gridATRMin, int _gridATRMax) : CTradingManager(basket)
+                                       int gridATRMin, int _gridATRMax, bool showTPLine, bool useVirtualSLTP)
+        : CTradingManager(basket)
     {
         _basket = basket;
         _normalLotCalc = normalLotCalc;
@@ -35,6 +38,9 @@ public:
 
         _gridGapCalc = new CGridGapCalculator(gridSizeMode, gridFixedSize, gridCustomSizeMode, gridCustomSeries,
                                               gridATRPeriod, gridATRValueAction, gridATRValue, gridATRMin, _gridATRMax);
+
+        _showTpLine = showTPLine;
+        _useVirtualSLTP = useVirtualSLTP;
     }
 
 public:
@@ -71,7 +77,20 @@ public:
         if (result)
         {
             _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);
-            _basket.SetTradeToVirtualSLTP(newTrade.Ticket(), slPrice, _recoveryAvgTPrice);
+            if (_showTpLine)
+            {
+                _DrawPriceLine(_GetTPLineName(), _recoveryAvgTPrice, clrBlue, STYLE_DASH);
+                _DrawPriceLine(_GetAVGOpenPriceLineName(), _basket.AverageOpenPrice(), clrOrange, STYLE_DASH);
+            }
+
+            if (_useVirtualSLTP)
+            {
+                _basket.SetTradeToVirtualSLTP(newTrade.Ticket(), slPrice, _recoveryAvgTPrice);
+            }
+            else
+            {
+                // TODO: set trades individual SL/TP
+            }
         }
         return result;
     }
@@ -79,15 +98,14 @@ public:
 private:
     double _NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction);
     double _CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction);
+    void _DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style);
+    string _GetTPLineName();
+    string _GetAVGOpenPriceLineName();
 };
 
 void CRecoveryManager::OnTick()
 {
-    if (_basket.Status() != BASKET_OPEN || _basket.IsEmpty())
-    {
-        // Do nothing, basket is empty or closed
-    }
-    else
+    if (_basket.Status() == BASKET_OPEN && !_basket.IsEmpty())
     {
         Trade firstTrade;
         _basket.FirstTrade(firstTrade);
@@ -129,7 +147,7 @@ void CRecoveryManager::OnTick()
                 if (_recoveryMode == RECOVERY_MARTINGALE)
                 {
                     double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
-                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);                   
+                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
                     if (OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                     {
                         // Done
@@ -154,15 +172,45 @@ void CRecoveryManager::OnTick()
                 }
             }
         }
-        else
-        {
-            // TODO
-        }
     }
+
+    // execute base class OnTick
     CTradingManager::OnTick();
 }
 
 ////////////////////////////////////////////////////
+string CRecoveryManager::_GetTPLineName()
+{
+    return StringFormat("avg_tp_%d", _basket.MagicNumber());
+}
+
+string CRecoveryManager::_GetAVGOpenPriceLineName()
+{
+    return StringFormat("avg_open_%d", _basket.MagicNumber());
+}
+
+void CRecoveryManager::_DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style)
+{
+    if (ObjectFind(0, name) >= 0)
+        ObjectDelete(0, name);
+    if (!ObjectCreate(0, name, OBJ_HLINE, 0, 0, price))
+    {
+        // utils.LogError(__FUNCTION__, "ObjectCreate(" + name + ",RECT) failed: ");
+    }
+
+    // Change the color
+    if (!ObjectSetInteger(0, name, OBJPROP_COLOR, clr))
+    {
+        // utils.LogError(__FUNCTION__, "ObjectSet(" + name + ",color   ) [3] failed: ");
+    }
+
+    // Change the color
+    if (!ObjectSetInteger(0, name, OBJPROP_STYLE, style))
+    {
+        // utils.LogError(__FUNCTION__, "ObjectSet(" + name + ",color   ) [3] failed: ");
+    }
+}
+
 double CRecoveryManager::_CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction)
 {
     double avgOpenPrice = _basket.AverageOpenPrice();
@@ -172,15 +220,15 @@ double CRecoveryManager::_CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direc
 double CRecoveryManager::_NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction)
 {
     int basketCount = _basket.Count();
+    double lotSize = 0;
     if (_recoveryMode == RECOVERY_MARTINGALE)
     {
-        return _basket.IsEmpty()
-                   ? _normalLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction)
-                   : _recoveryLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction);
+        lotSize = _basket.IsEmpty()
+                      ? _normalLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction)
+                      : _recoveryLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction);
     }
     else if (_recoveryMode == RECOVERY_HEDGING)
     {
-        double lotSize = 0;
         double sellLots = _basket.Volume(ORDER_TYPE_SELL);
         double buyLots = _basket.Volume(ORDER_TYPE_BUY);
         if (direction == ORDER_TYPE_BUY)
@@ -193,10 +241,11 @@ double CRecoveryManager::_NextLotSize(string symbol, int slPoints, double lastLo
         }
 
         lotSize = MathCeil(lotSize / constants.LotStep(symbol)) * constants.LotStep(symbol);
-        return _normalLotCalc.NormalizeLot(symbol, lotSize);
     }
     else
     {
-        return constants.MinLot(symbol);
+        lotSize = constants.MinLot(symbol);
     }
+
+    return _normalLotCalc.NormalizeLot(symbol, lotSize);
 }

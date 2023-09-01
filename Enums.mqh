@@ -26,7 +26,8 @@ enum ENUM_RECOVERY_MODE {
 enum ENUM_RECOVERY_LOT_SIZE_MODE {
    RECOVERY_LOT_FIXED                        = 0,  //Fixed Lot
    RECOVERY_LOT_ADD                          = 1,  //Add Lot
-   RECOVERY_LOT_FIXED_CUSTOM                 = 2,  //Custom Series
+   RECOVERY_LOT_MULTIPLIER                   = 2,  //Multiplier Lot
+   RECOVERY_LOT_FIXED_CUSTOM                 = 3,  //Custom Series
 };
 
 enum ENUM_RECOVERY_FIXED_CUSTOM_MODE {

@@ -76,7 +76,7 @@ double CLotSizeCalculator::NormalizeLot(string symbol, double lots)
       NormalizedLot = MaxLot; // Broker's absolute maximum Lot
 
    // constants.LogVerbose(__FUNCTION__, StringFormat( "normalized lot %f", NormalizedLot));
-   return NormalizeDouble(NormalizedLot, 2);
+   return NormalizeDouble(NormalizedLot, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
 }
 
 double CLotSizeCalculator::MaxLotForMarginAvailable(string symbol)
