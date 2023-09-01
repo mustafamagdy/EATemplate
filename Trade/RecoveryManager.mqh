@@ -1,11 +1,12 @@
 #include <Object.mqh>
-#include "..\Trade\TradingBasket.mqh"
-#include "..\Trade\TradingManager.mqh"
+#include ".\TradingBasket.mqh"
+#include ".\TradingManager.mqh"
 #include "..\Enums.mqh"
 #include "..\Constants.mqh"
+#include "..\Recovery\GridGapCalculator.mqh";
+#include "..\Recovery\RecoveryLotSizeCalculator.mqh";
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh";
-#include "RecoveryLotSizeCalculator.mqh";
-#include ".\GridGapCalculator.mqh";
+#include "..\UI\Reporter.mqh";
 
 class CRecoveryManager : public CTradingManager
 {
@@ -23,12 +24,12 @@ private:
     int _maxGridOrderCount;
 
 public:
-    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
+    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
                                        int maxGridOrderCount, ENUM_RECOVERY_MODE recoveryMode, double recoveryTpPoints,
                                        ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize, ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode,
                                        string gridCustomSeries, int gridATRPeriod, ENUM_VALUE_ACTION gridATRValueAction, double gridATRValue,
                                        int gridATRMin, int _gridATRMax, bool showTPLine, bool useVirtualSLTP)
-        : CTradingManager(basket)
+        : CTradingManager(basket, reporter)
     {
         _basket = basket;
         _normalLotCalc = normalLotCalc;

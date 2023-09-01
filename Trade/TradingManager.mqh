@@ -3,6 +3,7 @@
 #include <Trade\PositionInfo.mqh>
 #include "TradingBasket.mqh";
 #include "..\Constants.mqh"
+#include "..\UI\Reporter.mqh"
 
 #property strict
 
@@ -12,13 +13,16 @@ class CTradingManager : public CObject
 protected:
     CConstants *constants;
     CTradingBasket *_basket;
+    CReporter *_reporter;
+
     CTrade _trade;
     CPositionInfo _position;
 
 public:
-    CTradingManager(CTradingBasket *basket)
+    CTradingManager(CTradingBasket *basket, CReporter *reporter)
     {
         _basket = basket;
+        _reporter = reporter;
     }
 
 public:
@@ -50,7 +54,9 @@ public:
 
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
     {
-        return _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
+        bool success = _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
+        _reporter.ReportTradeOpen(orderType);
+        return success;
     }
 
     virtual void OnTick()
