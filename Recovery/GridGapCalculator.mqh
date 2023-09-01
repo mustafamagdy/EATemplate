@@ -44,7 +44,7 @@ public:
     CGridGapCalculator(ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
                        ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode, string gridCustomSeries,
                        int gridATRPeriod, ENUM_VALUE_ACTION gridATRValueAction, double gridATRValue, int gridATRMin, int _gridATRMax);
-    ~CGridGapCalculator();
+    ~CGridGapCalculator() {}
 
 public:
     int CalculateNextOrderDistance(int orderCount, double lastOrderPrice, double previousOrderPrice);
