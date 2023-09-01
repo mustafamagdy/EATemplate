@@ -41,8 +41,8 @@ public:
 
 public:
     void SetBasketAvgTpPrice(double tpPrice);
-    bool AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade);
-    bool AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade);
+    bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade);
+    bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade);
     void SetBasketSlPrice(double slPrice);
     void SwitchTradeToVirtualSLTP(ulong ticket);
     bool GetTradeByIndex(int index, Trade &trade);
@@ -126,7 +126,7 @@ void CTradingBasket::SwitchTradeToVirtualSLTP(ulong ticket)
     }
 }
 
-bool CTradingBasket::AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
+bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
 {
     double slPrice = 0, tpPrice = 0;
     double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
@@ -150,10 +150,10 @@ bool CTradingBasket::AddTradeWithPoints(double volume, double price, ENUM_ORDER_
         tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
     }
 
-    return AddTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
+    return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
 }
 
-bool CTradingBasket::AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
+bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
 {
     if (_basketStatus == BASKET_CLOSING)
     {

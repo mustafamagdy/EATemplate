@@ -38,6 +38,25 @@ public:
 
 public:
     void OnTick();
+    virtual bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
+    {
+        bool result = CTradingManager::OpenTradeWithPoints(volume, price, orderType, slPoints, tpPoints, comment, message, newTrade);
+        if (result)
+        {
+            _basket.SwitchTradeToVirtualSLTP(newTrade.Ticket());
+        }
+        return result;
+    }
+
+    virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
+    {
+        bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
+        if (result)
+        {
+            _basket.SwitchTradeToVirtualSLTP(newTrade.Ticket());
+        }
+        return result;
+    }
 
 private:
     double _NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction);
@@ -93,7 +112,7 @@ void CRecoveryManager::OnTick()
                 {
                     double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
                     double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-                    if (!_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+                    if (!_basket.OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                     {
                         _basket.SwitchTradeToVirtualSLTP(trade.Ticket());
                     }
@@ -106,7 +125,7 @@ void CRecoveryManager::OnTick()
                 {
                     double nextSLPrice = price + NormalizeDouble(nextGridGap * _Point, _Digits);
                     double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-                    if (_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message, trade))
+                    if (_basket.OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message, trade))
                     {
                         _basket.SetBasketSlPrice(0);
                     }

@@ -22,6 +22,16 @@ public:
     }
 
 public:
+    virtual bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
+    {
+        return _basket.OpenTradeWithPoints(volume, price, orderType, slPoints, tpPoints, comment, message, newTrade);
+    }
+
+    virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
+    {
+        return _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
+    }
+
     virtual void OnTick()
     {
         _basket.OnTick();
