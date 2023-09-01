@@ -12,26 +12,27 @@ class CRecoveryManager : public CTradingManager
 
 private:
     CNormalLotSizeCalculator *_normalLotCalc;
-    CGridGapCalculator *_gridGapCalc;
     CRecoveryLotSizeCalculator *_recoveryLotCalc;
+    CGridGapCalculator *_gridGapCalc;
     ENUM_RECOVERY_MODE _recoveryMode;
     double _recoveryTpPoints;
     double _recoveryAvgTPrice;
     int _maxGridOrderCount;
 
 public:
-    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CNormalLotSizeCalculator *normalLotCalc, int maxGridOrderCount, ENUM_RECOVERY_MODE recoveryMode,
-                                       double recoveryTpPoints, ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
-                                       ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode, string gridCustomSeries,
-                                       int gridATRPeriod, ENUM_VALUE_ACTION gridATRValueAction, double gridATRValue,
+    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
+                                       int maxGridOrderCount, ENUM_RECOVERY_MODE recoveryMode, double recoveryTpPoints,
+                                       ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize, ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode,
+                                       string gridCustomSeries, int gridATRPeriod, ENUM_VALUE_ACTION gridATRValueAction, double gridATRValue,
                                        int gridATRMin, int _gridATRMax) : CTradingManager(basket)
     {
         _basket = basket;
-        _maxGridOrderCount = maxGridOrderCount;
         _normalLotCalc = normalLotCalc;
+        _recoveryLotCalc = recoveryLotCalc;
+        _maxGridOrderCount = maxGridOrderCount;
         _recoveryMode = recoveryMode;
         _recoveryTpPoints = recoveryTpPoints;
-        _recoveryLotCalc = new CRecoveryLotSizeCalculator(normalLotCalc);
+
         _gridGapCalc = new CGridGapCalculator(gridSizeMode, gridFixedSize, gridCustomSizeMode, gridCustomSeries,
                                               gridATRPeriod, gridATRValueAction, gridATRValue, gridATRMin, _gridATRMax);
     }
@@ -40,26 +41,44 @@ public:
     void OnTick();
     virtual bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
     {
-        bool result = CTradingManager::OpenTradeWithPoints(volume, price, orderType, slPoints, tpPoints, comment, message, newTrade);
-        if (result)
+        double slPrice = 0, tpPrice = 0;
+        double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+        double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+        double spread = ask - bid;
+        int spread_points = (int)MathRound(spread / SymbolInfoDouble(Symbol(), SYMBOL_POINT));
+        if (slPoints <= spread_points)
         {
-            _basket.SwitchTradeToVirtualSLTP(newTrade.Ticket());
+            message = "SL points is less than the spread points";
+            return (false);
         }
-        return result;
+
+        if (orderType == ORDER_TYPE_BUY)
+        {
+            slPrice = slPoints > 0 ? price - (slPoints * _Point) : 0;
+            tpPrice = tpPoints > 0 ? price + (tpPoints * _Point) : 0;
+        }
+        else
+        {
+            slPrice = slPoints > 0 ? price + (slPoints * _Point) : 0;
+            tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
+        }
+        return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
     }
 
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
     {
-        bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
+        bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, 0, 0, comment, message, newTrade);
         if (result)
         {
-            _basket.SwitchTradeToVirtualSLTP(newTrade.Ticket());
+            _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);
+            _basket.SetTradeToVirtualSLTP(newTrade.Ticket(), slPrice, _recoveryAvgTPrice);
         }
         return result;
     }
 
 private:
     double _NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction);
+    double _CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction);
 };
 
 void CRecoveryManager::OnTick()
@@ -77,8 +96,7 @@ void CRecoveryManager::OnTick()
 
         if (_basket.Count() == 1)
         {
-            _recoveryAvgTPrice = firstTrade.TakeProfit();
-            _basket.SetBasketSlPrice(0);
+            _recoveryAvgTPrice = firstTrade.VirtualTakeProfit();
         }
 
         double lastLot = lastTrade.Volume();
@@ -111,10 +129,10 @@ void CRecoveryManager::OnTick()
                 if (_recoveryMode == RECOVERY_MARTINGALE)
                 {
                     double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
-                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-                    if (!_basket.OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);                   
+                    if (OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                     {
-                        _basket.SwitchTradeToVirtualSLTP(trade.Ticket());
+                        // Done
                     }
                     else
                     {
@@ -125,9 +143,9 @@ void CRecoveryManager::OnTick()
                 {
                     double nextSLPrice = price + NormalizeDouble(nextGridGap * _Point, _Digits);
                     double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-                    if (_basket.OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message, trade))
+                    if (OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                     {
-                        _basket.SetBasketSlPrice(0);
+                        // Done
                     }
                     else
                     {
@@ -145,6 +163,11 @@ void CRecoveryManager::OnTick()
 }
 
 ////////////////////////////////////////////////////
+double CRecoveryManager::_CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction)
+{
+    double avgOpenPrice = _basket.AverageOpenPrice();
+    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? 1 : -1) * _recoveryTpPoints * _Point), _Digits);
+}
 
 double CRecoveryManager::_NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction)
 {

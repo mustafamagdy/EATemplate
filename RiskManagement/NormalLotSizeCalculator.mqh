@@ -3,7 +3,7 @@
 
 #property strict
 
-class CNormalLotSizeCalculator : public CLotSizeCalculatorBase
+class CNormalLotSizeCalculator : public CLotSizeCalculator
 {
 
 private:
@@ -22,7 +22,7 @@ public:
        double riskPercentage,
        double xBalance,
        double lotPerXBalance)
-       : CLotSizeCalculatorBase()
+       : CLotSizeCalculator()
    {
       _riskType = riskType;
       _fixedLot = fixedLot;

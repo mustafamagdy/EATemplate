@@ -3,7 +3,7 @@
 
 #property strict
 
-class CLotSizeCalculatorBase : public CObject
+class CLotSizeCalculator : public CObject
 {
 
 private:
@@ -17,9 +17,8 @@ protected:
    double GetRiskLots(string symbol, double riskPoints, double riskAmount);
 
 public:
-   CLotSizeCalculatorBase(){};
-
-   ~CLotSizeCalculatorBase(){};
+   CLotSizeCalculator(){};
+   ~CLotSizeCalculator(){};
 
 public:
    virtual double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1) = NULL;
@@ -29,12 +28,12 @@ public:
    double NormalizeLot(string symbol, double lots);
 };
 
-double CLotSizeCalculatorBase::GetRiskAmount(string symbol, double riskPoints, double riskLotSize)
+double CLotSizeCalculator::GetRiskAmount(string symbol, double riskPoints, double riskLotSize)
 {
    return riskPoints * riskLotSize * _Point;
 }
 
-double CLotSizeCalculatorBase::GetRiskLots(string symbol, double riskPoints, double riskAmount)
+double CLotSizeCalculator::GetRiskLots(string symbol, double riskPoints, double riskAmount)
 {
    if (riskPoints == 0)
       return constants.MinLot(symbol);
@@ -47,7 +46,7 @@ double CLotSizeCalculatorBase::GetRiskLots(string symbol, double riskPoints, dou
    // return riskAmount/((riskPoints * ) + commission);
 }
 
-double CLotSizeCalculatorBase::NormalizeLot(string symbol, double lots)
+double CLotSizeCalculator::NormalizeLot(string symbol, double lots)
 {
    double NormalizedLot; // The final LotSize, bounded by broker's specs
    double InverseLotStep;
@@ -80,7 +79,7 @@ double CLotSizeCalculatorBase::NormalizeLot(string symbol, double lots)
    return NormalizeDouble(NormalizedLot, 2);
 }
 
-double CLotSizeCalculatorBase::MaxLotForMarginAvailable(string symbol)
+double CLotSizeCalculator::MaxLotForMarginAvailable(string symbol)
 {
 
    double freeMargin = constants.AccountFreeMargin();

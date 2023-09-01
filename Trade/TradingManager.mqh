@@ -24,7 +24,28 @@ public:
 public:
     virtual bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
     {
-        return _basket.OpenTradeWithPoints(volume, price, orderType, slPoints, tpPoints, comment, message, newTrade);
+        double slPrice = 0, tpPrice = 0;
+        double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
+        double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+        double spread = ask - bid;
+        int spread_points = (int)MathRound(spread / SymbolInfoDouble(Symbol(), SYMBOL_POINT));
+        if (slPoints <= spread_points)
+        {
+            message = "SL points is less than the spread points";
+            return (false);
+        }
+
+        if (orderType == ORDER_TYPE_BUY)
+        {
+            slPrice = slPoints > 0 ? price - (slPoints * _Point) : 0;
+            tpPrice = tpPoints > 0 ? price + (tpPoints * _Point) : 0;
+        }
+        else
+        {
+            slPrice = slPoints > 0 ? price + (slPoints * _Point) : 0;
+            tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
+        }
+        return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
     }
 
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)

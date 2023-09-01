@@ -57,4 +57,10 @@ public:
         _sLPrice = _tPPrice = 0;
     }
     
+    void SwitchToVirtualSLTP(double sLPrice, double tPPrice)
+    {
+        _virtualSLPrice = sLPrice;
+        _virtualTPPrice = tPPrice;        
+        _sLPrice = _tPPrice = 0;
+    }
 };

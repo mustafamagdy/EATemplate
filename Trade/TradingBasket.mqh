@@ -45,6 +45,7 @@ public:
     bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade);
     void SetBasketSlPrice(double slPrice);
     void SwitchTradeToVirtualSLTP(ulong ticket);
+    void SetTradeToVirtualSLTP(ulong ticket, double slPrice, double tpPrice);
     bool GetTradeByIndex(int index, Trade &trade);
     bool RemoveTradeByIndex(int index);
     void CloseBasketOrders();
@@ -87,6 +88,21 @@ void CTradingBasket::SetBasketSlPrice(double slPrice)
         if (_position.SelectByTicket(ticket))
         {
             _trade.PositionModify(ticket, slPrice, _position.TakeProfit());
+        }
+    }
+}
+
+void CTradingBasket::SetTradeToVirtualSLTP(ulong ticket, double slPrice, double tpPrice)
+{
+    for (int i = Count() - 1; i >= 0; i--)
+    {
+        if (_trades[i].Ticket() != ticket)
+            continue;
+
+        _trades[i].SwitchToVirtualSLTP(slPrice, tpPrice);
+        if (_position.SelectByTicket(ticket))
+        {
+            _trade.PositionModify(ticket, 0, 0);
         }
     }
 }
