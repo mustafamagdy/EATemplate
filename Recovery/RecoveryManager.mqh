@@ -5,7 +5,7 @@
 #include "..\Constants.mqh"
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh";
 #include "RecoveryLotSizeCalculator.mqh";
-#include "GridGapCalculator.mqh";
+#include ".\GridGapCalculator.mqh";
 
 class CRecoveryManager : public CTradingManager
 {
@@ -14,6 +14,7 @@ private:
     CNormalLotSizeCalculator *_normalLotCalc;
     CRecoveryLotSizeCalculator *_recoveryLotCalc;
     CGridGapCalculator *_gridGapCalc;
+
     ENUM_RECOVERY_MODE _recoveryMode;
     bool _showTpLine;
     bool _useVirtualSLTP;
@@ -124,13 +125,17 @@ void CRecoveryManager::OnTick()
         double lastTradeSL = lastTrade.VirtualStopLoss();
 
         string symbol = _basket.Symbol();
-        double price = constants.Ask(symbol);
+        double ask = constants.Ask(symbol);
+        double bid = constants.Bid(symbol);
 
-        if (price > _recoveryAvgTPrice)
+        bool hitTP = lastTrade.OrderType() == ORDER_TYPE_BUY ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
+        bool hitSL = lastTrade.OrderType() == ORDER_TYPE_BUY ? bid <= lastTradeSL : ask >= lastTradeSL;
+
+        if (hitTP)
         {
             _basket.CloseBasketOrders();
         }
-        else if (price <= lastTradeSL)
+        else if (hitSL)
         {
             if (_maxGridOrderCount != 0 && _basket.Count() >= _maxGridOrderCount)
             {
@@ -146,9 +151,17 @@ void CRecoveryManager::OnTick()
                 // Check the recovery type here to know the next direction
                 if (_recoveryMode == RECOVERY_MARTINGALE)
                 {
-                    double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
+                    double nextSLPrice;
+                    if (orderType == ORDER_TYPE_BUY)
+                    {
+                        nextSLPrice = ask - NormalizeDouble(nextGridGap * _Point, _Digits);
+                    }
+                    else
+                    {
+                        nextSLPrice = bid + NormalizeDouble(nextGridGap * _Point, _Digits);
+                    }
                     double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-                    if (OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+                    if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                     {
                         // Done
                     }
@@ -159,9 +172,10 @@ void CRecoveryManager::OnTick()
                 }
                 else if (_recoveryMode == RECOVERY_HEDGING)
                 {
-                    double nextSLPrice = price + NormalizeDouble(nextGridGap * _Point, _Digits);
-                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-                    if (OpenTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+                    double nextSLPrice = ask + NormalizeDouble(nextGridGap * _Point, _Digits);
+                    ENUM_ORDER_TYPE newOrderType = orderType == ORDER_TYPE_BUY ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, newOrderType);
+                    if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                     {
                         // Done
                     }
