@@ -10,7 +10,7 @@ enum ENUM_BASKET_STATUS
     BASKET_CLOSED = 2
 };
 
-class CTradingBasket : CObject
+class CTradingBasket : public CObject
 {
 private:
     CTrade _trade;
@@ -41,10 +41,12 @@ public:
 
 public:
     void SetBasketAvgTpPrice(double tpPrice);
-    bool AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message);
-    bool AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message);
-    void SetBasketOriginalSlPrice(double slPrice);
+    bool AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade);
+    bool AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade);
     void SetBasketSlPrice(double slPrice);
+    void SwitchTradeToVirtualSLTP(ulong ticket);
+    bool GetTradeByIndex(int index, Trade &trade);
+    bool RemoveTradeByIndex(int index);
     void CloseBasketOrders();
     void OnTick();
 
@@ -89,13 +91,42 @@ void CTradingBasket::SetBasketSlPrice(double slPrice)
     }
 }
 
-void CTradingBasket::SetBasketOriginalSlPrice(double basketAvgSlPrice)
+bool CTradingBasket::GetTradeByIndex(int index, Trade &trade)
 {
-    _basketAvgSlPrice = basketAvgSlPrice;
-    CTradingBasket::_UpdateVirtualSlForBasketTrades();
+    if (index > Count() || index < 0)
+        return (false);
+    trade = _trades[index];
+    return (true);
 }
 
-bool CTradingBasket::AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message)
+bool CTradingBasket::RemoveTradeByIndex(int index)
+{
+    if (index > Count() || index < 0)
+        return (false);
+    ArrayRemove(_trades, index, 1);
+    return (true);
+}
+void CTradingBasket::SwitchTradeToVirtualSLTP(ulong ticket)
+{
+    if (IsEmpty())
+        return;
+
+    for (int i = Count() - 1; i >= 0; i--)
+    {
+        if (_trades[i].Ticket() != ticket)
+        {
+            continue;
+        }
+        Trade trade = _trades[i];
+        trade.SwitchToVirtualSLTP();
+        if (_position.SelectByTicket(ticket))
+        {
+            _trade.PositionModify(ticket, trade.StopLoss(), trade.TakeProfit());
+        }
+    }
+}
+
+bool CTradingBasket::AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
 {
     double slPrice = 0, tpPrice = 0;
     double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
@@ -119,10 +150,10 @@ bool CTradingBasket::AddTradeWithPoints(double volume, double price, ENUM_ORDER_
         tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
     }
 
-    return AddTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message);
+    return AddTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
 }
 
-bool CTradingBasket::AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message)
+bool CTradingBasket::AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
 {
     if (_basketStatus == BASKET_CLOSING)
     {
@@ -144,7 +175,7 @@ bool CTradingBasket::AddTradeWithPrice(double volume, double price, ENUM_ORDER_T
 
         ArrayResize(_trades, ArraySize(_trades) + 1);
         _trades[ArraySize(_trades) - 1] = trade;
-
+        newTrade = trade;
         _basketStatus = BASKET_OPEN;
     }
     else
@@ -266,41 +297,6 @@ void CTradingBasket::_UpdateCurrentTrades()
     {
         ulong ticket = _trades[i].Ticket();
         if (!PositionSelectByTicket(ticket))
-        {
-            ArrayRemove(_trades, i, 1);
-        }
-    }
-
-    // Close orders and remove them if SL/TP hit
-    for (int i = Count() - 1; i >= 0; i--)
-    {
-        ulong ticket = _trades[i].Ticket();
-        if (!PositionSelectByTicket(ticket))
-        {
-            continue;
-        }
-
-        // check virtual SL/TP if either, close and remove
-        string symbol = PositionGetString(POSITION_SYMBOL);
-        ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-        double bidPrice = SymbolInfoDouble(symbol, SYMBOL_BID);
-        double askPrice = SymbolInfoDouble(symbol, SYMBOL_ASK);
-        double takeProfit = _trades[i].VirtualTakeProfit();
-        double stopLoss = _trades[i].VirtualStopLoss();
-        bool closed = false;
-
-        if ((type == POSITION_TYPE_BUY && bidPrice >= takeProfit) ||
-            (type == POSITION_TYPE_SELL && askPrice <= takeProfit))
-        {
-            closed = _trade.PositionClose(ticket, ULONG_MAX);
-        }
-        else if ((type == POSITION_TYPE_BUY && bidPrice <= stopLoss) ||
-                 (type == POSITION_TYPE_SELL && askPrice >= stopLoss))
-        {
-            closed = _trade.PositionClose(ticket, ULONG_MAX);
-        }
-
-        if (closed)
         {
             ArrayRemove(_trades, i, 1);
         }

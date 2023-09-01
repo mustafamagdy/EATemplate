@@ -1,17 +1,16 @@
 #include <Object.mqh>
 #include "..\Trade\TradingBasket.mqh"
+#include "..\Trade\TradingManager.mqh"
 #include "..\Enums.mqh"
 #include "..\Constants.mqh"
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh";
 #include "RecoveryLotSizeCalculator.mqh";
 #include "GridGapCalculator.mqh";
 
-class CRecoveryManager : CObject
+class CRecoveryManager : public CTradingManager
 {
 
 private:
-    CConstants *constants;
-    CTradingBasket *_basket;
     CNormalLotSizeCalculator *_normalLotCalc;
     CGridGapCalculator *_gridGapCalc;
     CRecoveryLotSizeCalculator *_recoveryLotCalc;
@@ -25,7 +24,7 @@ public:
                                        double recoveryTpPoints, ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
                                        ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode, string gridCustomSeries,
                                        int gridATRPeriod, ENUM_VALUE_ACTION gridATRValueAction, double gridATRValue,
-                                       int gridATRMin, int _gridATRMax)
+                                       int gridATRMin, int _gridATRMax) : CTradingManager(basket)
     {
         _basket = basket;
         _maxGridOrderCount = maxGridOrderCount;
@@ -42,85 +41,91 @@ public:
 
 private:
     double _NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction);
-
 };
 
 void CRecoveryManager::OnTick()
 {
     if (_basket.Status() != BASKET_OPEN || _basket.IsEmpty())
     {
-        return;
-    }
-
-    Trade firstTrade;
-    _basket.FirstTrade(firstTrade);
-    Trade lastTrade;
-    _basket.LastTrade(lastTrade);
-
-    if (_basket.Count() == 1)
-    {
-        _recoveryAvgTPrice = firstTrade.TakeProfit();
-        _basket.SetBasketSlPrice(0);
-    }
-
-    double lastLot = lastTrade.Volume();
-    double lastOpenPrice = lastTrade.OpenPrice();
-    double firstOpenPrice = firstTrade.OpenPrice();
-    double firstTradeTp = firstTrade.TakeProfit();
-    double lastTradeSL = lastTrade.VirtualStopLoss();
-
-    string symbol = _basket.Symbol();
-    double price = constants.Ask(symbol);
-
-    if (price > _recoveryAvgTPrice)
-    {
-        _basket.CloseBasketOrders();
-    }
-    else if (price <= lastTradeSL)
-    {
-        if (_maxGridOrderCount != 0 && _basket.Count() >= _maxGridOrderCount)
-        {
-            // Do nothing as we reached the max grid order count
-            return;
-        }
-
-        ENUM_ORDER_TYPE orderType = lastTrade.OrderType();
-        int nextGridGap = _gridGapCalc.CalculateNextOrderDistance(_basket.Count(), lastOpenPrice, firstTradeTp);
-        string message;
-
-        // Check the recovery type here to know the next direction
-        if (_recoveryMode == RECOVERY_MARTINGALE)
-        {
-            double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
-            double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-            if (!_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message))
-            {
-                _basket.SetBasketSlPrice(0);
-            }
-            else
-            {
-                // Failed to open a recovery trade
-            }
-        }
-        else if (_recoveryMode == RECOVERY_HEDGING)
-        {
-            double nextSLPrice = price + NormalizeDouble(nextGridGap * _Point, _Digits);
-            double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-            if (_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message))
-            {
-                _basket.SetBasketSlPrice(0);
-            }
-            else
-            {
-                // Failed to open a recovery trade
-            }
-        }
+        // Do nothing, basket is empty or closed
     }
     else
     {
-        //TODO
+        Trade firstTrade;
+        _basket.FirstTrade(firstTrade);
+        Trade lastTrade;
+        _basket.LastTrade(lastTrade);
+
+        if (_basket.Count() == 1)
+        {
+            _recoveryAvgTPrice = firstTrade.TakeProfit();
+            _basket.SetBasketSlPrice(0);
+        }
+
+        double lastLot = lastTrade.Volume();
+        double lastOpenPrice = lastTrade.OpenPrice();
+        double firstOpenPrice = firstTrade.OpenPrice();
+        double firstTradeTp = firstTrade.TakeProfit();
+        double lastTradeSL = lastTrade.VirtualStopLoss();
+
+        string symbol = _basket.Symbol();
+        double price = constants.Ask(symbol);
+
+        if (price > _recoveryAvgTPrice)
+        {
+            _basket.CloseBasketOrders();
+        }
+        else if (price <= lastTradeSL)
+        {
+            if (_maxGridOrderCount != 0 && _basket.Count() >= _maxGridOrderCount)
+            {
+                // Do nothing as we reached the max grid order count
+            }
+            else
+            {
+                ENUM_ORDER_TYPE orderType = lastTrade.OrderType();
+                int nextGridGap = _gridGapCalc.CalculateNextOrderDistance(_basket.Count(), lastOpenPrice, firstTradeTp);
+                string message;
+                Trade trade;
+
+                // Check the recovery type here to know the next direction
+                if (_recoveryMode == RECOVERY_MARTINGALE)
+                {
+                    double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
+                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
+                    if (!_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+                    {
+                        _basket.SwitchTradeToVirtualSLTP(trade.Ticket());
+                    }
+                    else
+                    {
+                        // Failed to open a recovery trade
+                    }
+                }
+                else if (_recoveryMode == RECOVERY_HEDGING)
+                {
+                    double nextSLPrice = price + NormalizeDouble(nextGridGap * _Point, _Digits);
+                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
+                    if (_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message, trade))
+                    {
+                        _basket.SetBasketSlPrice(0);
+                    }
+                    else
+                    {
+                        // Failed to open a recovery trade
+                    }
+                }
+            }
+        }
+        else
+        {
+            // TODO
+        }
     }
+    CTradingManager::OnTick();
 }
+
+////////////////////////////////////////////////////
 
 double CRecoveryManager::_NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction)
 {
