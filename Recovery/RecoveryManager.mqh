@@ -42,6 +42,7 @@ public:
 
 private:
     double _NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction);
+
 };
 
 void CRecoveryManager::OnTick()
@@ -59,14 +60,14 @@ void CRecoveryManager::OnTick()
     if (_basket.Count() == 1)
     {
         _recoveryAvgTPrice = firstTrade.TakeProfit();
-        _basket.SetBasketAvgSlPrice(0);
+        _basket.SetBasketSlPrice(0);
     }
 
     double lastLot = lastTrade.Volume();
     double lastOpenPrice = lastTrade.OpenPrice();
     double firstOpenPrice = firstTrade.OpenPrice();
     double firstTradeTp = firstTrade.TakeProfit();
-    double lastTradeSL = lastTrade.OriginalStopLoss();
+    double lastTradeSL = lastTrade.VirtualStopLoss();
 
     string symbol = _basket.Symbol();
     double price = constants.Ask(symbol);
@@ -92,9 +93,9 @@ void CRecoveryManager::OnTick()
         {
             double nextSLPrice = price - NormalizeDouble(nextGridGap * _Point, _Digits);
             double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-            if (_basket.AddTradeWithPrice(nextLot, price, orderType, 0, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message))
+            if (!_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message))
             {
-                _basket.SetBasketAvgSlPrice(nextSLPrice);
+                _basket.SetBasketSlPrice(0);
             }
             else
             {
@@ -105,9 +106,9 @@ void CRecoveryManager::OnTick()
         {
             double nextSLPrice = price + NormalizeDouble(nextGridGap * _Point, _Digits);
             double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-            if (_basket.AddTradeWithPrice(nextLot, price, orderType, 0, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message))
+            if (_basket.AddTradeWithPrice(nextLot, price, orderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RH: Order %d", _basket.Count() + 1), message))
             {
-                _basket.SetBasketAvgSlPrice(nextSLPrice);
+                _basket.SetBasketSlPrice(0);
             }
             else
             {

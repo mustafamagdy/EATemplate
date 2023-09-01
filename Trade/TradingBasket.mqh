@@ -40,16 +40,18 @@ public:
     bool LastTrade(Trade &trade);
 
 public:
-    void SetBasketAvgTpPrice(double basketAvgTpPrice);
-    void SetBasketAvgSlPrice(double basketAvgSlPrice);
+    void SetBasketAvgTpPrice(double tpPrice);
     bool AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message);
     bool AddTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message);
+    void SetBasketOriginalSlPrice(double slPrice);
+    void SetBasketSlPrice(double slPrice);
     void CloseBasketOrders();
     void OnTick();
 
 private:
     void _UpdateAvgTpForBasketTrades();
-    void _UpdateAvgSlForBasketTrades();
+    void _UpdateVirtualSlForBasketTrades();
+    void _UpdateCurrentTrades();
 };
 
 CTradingBasket::CTradingBasket(string symbol, long magicNumber)
@@ -66,16 +68,31 @@ CTradingBasket::~CTradingBasket()
     ArrayFree(_trades);
 }
 
-void CTradingBasket::SetBasketAvgTpPrice(double basketAvgTpPrice)
+void CTradingBasket::SetBasketAvgTpPrice(double tpPrice)
 {
-    _basketAvgTpPrice = basketAvgTpPrice;
-    _UpdateAvgTpForBasketTrades();
+    _basketAvgTpPrice = tpPrice;
+    CTradingBasket::_UpdateAvgTpForBasketTrades();
 }
 
-void CTradingBasket::SetBasketAvgSlPrice(double basketAvgSlPrice)
+void CTradingBasket::SetBasketSlPrice(double slPrice)
+{
+    if (IsEmpty())
+        return;
+
+    for (int i = Count() - 1; i >= 0; i--)
+    {
+        ulong ticket = _trades[i].Ticket();
+        if (_position.SelectByTicket(ticket))
+        {
+            _trade.PositionModify(ticket, slPrice, _position.TakeProfit());
+        }
+    }
+}
+
+void CTradingBasket::SetBasketOriginalSlPrice(double basketAvgSlPrice)
 {
     _basketAvgSlPrice = basketAvgSlPrice;
-    _UpdateAvgSlForBasketTrades();
+    CTradingBasket::_UpdateVirtualSlForBasketTrades();
 }
 
 bool CTradingBasket::AddTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message)
@@ -235,19 +252,55 @@ void CTradingBasket::CloseBasketOrders()
             }
         }
     }
-    
+
     if (IsEmpty())
     {
         _basketStatus = BASKET_CLOSED;
     }
 }
 
-void CTradingBasket::OnTick()
+void CTradingBasket::_UpdateCurrentTrades()
 {
+    // Cleanup the basket
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
         if (!PositionSelectByTicket(ticket))
+        {
+            ArrayRemove(_trades, i, 1);
+        }
+    }
+
+    // Close orders and remove them if SL/TP hit
+    for (int i = Count() - 1; i >= 0; i--)
+    {
+        ulong ticket = _trades[i].Ticket();
+        if (!PositionSelectByTicket(ticket))
+        {
+            continue;
+        }
+
+        // check virtual SL/TP if either, close and remove
+        string symbol = PositionGetString(POSITION_SYMBOL);
+        ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
+        double bidPrice = SymbolInfoDouble(symbol, SYMBOL_BID);
+        double askPrice = SymbolInfoDouble(symbol, SYMBOL_ASK);
+        double takeProfit = _trades[i].VirtualTakeProfit();
+        double stopLoss = _trades[i].VirtualStopLoss();
+        bool closed = false;
+
+        if ((type == POSITION_TYPE_BUY && bidPrice >= takeProfit) ||
+            (type == POSITION_TYPE_SELL && askPrice <= takeProfit))
+        {
+            closed = _trade.PositionClose(ticket, ULONG_MAX);
+        }
+        else if ((type == POSITION_TYPE_BUY && bidPrice <= stopLoss) ||
+                 (type == POSITION_TYPE_SELL && askPrice >= stopLoss))
+        {
+            closed = _trade.PositionClose(ticket, ULONG_MAX);
+        }
+
+        if (closed)
         {
             ArrayRemove(_trades, i, 1);
         }
@@ -259,13 +312,18 @@ void CTradingBasket::OnTick()
     }
 }
 
+void CTradingBasket::OnTick()
+{
+    CTradingBasket::_UpdateCurrentTrades();
+}
+
 /**********************************************/
 
 void CTradingBasket::_UpdateAvgTpForBasketTrades()
 {
     if (IsEmpty())
         return;
-    
+
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
@@ -276,17 +334,8 @@ void CTradingBasket::_UpdateAvgTpForBasketTrades()
     }
 }
 
-void CTradingBasket::_UpdateAvgSlForBasketTrades()
+void CTradingBasket::_UpdateVirtualSlForBasketTrades()
 {
     if (IsEmpty())
         return;
-
-    for (int i = Count() - 1; i >= 0; i--)
-    {
-        ulong ticket = _trades[i].Ticket();
-        if (_position.SelectByTicket(ticket))
-        {            
-            _trade.PositionModify(ticket, _basketAvgSlPrice, _position.TakeProfit());
-        }
-    }
 }

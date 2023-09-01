@@ -12,8 +12,8 @@ private:
     double _fees;
     double _sLPrice;
     double _tPPrice;
-    double _originalSLPrice;
-    double _originalTPPrice;
+    double _virtualSLPrice;
+    double _virtualTPPrice;
     string _comment;
 
 public:
@@ -31,8 +31,8 @@ public:
         _fees = fees;
         _sLPrice = sLPrice;
         _tPPrice = tPPrice;
-        _originalSLPrice = sLPrice;
-        _originalTPPrice = tPPrice;
+        _virtualSLPrice = sLPrice;
+        _virtualTPPrice = tPPrice;
         _comment = comment;
     }
 
@@ -46,10 +46,15 @@ public:
     double Fees() const { return _fees; }
     double StopLoss() const { return _sLPrice; }
     double TakeProfit() const { return _tPPrice; }
-    double OriginalStopLoss() const { return _originalSLPrice; }
-    double OriginalTakeProfit() const { return _originalTPPrice; }
+    double VirtualStopLoss() const { return _virtualSLPrice; }
+    double VirtualTakeProfit() const { return _virtualTPPrice; }
     string Comment() const { return _comment; }
 
-    void SetStopLoss(double sLPrice) { _sLPrice = sLPrice; }
-    void SetTakeProfit(double tPPrice) { _tPPrice = tPPrice; }
+    void SwitchToVirtualSLTP()
+    {
+        _virtualSLPrice = _sLPrice;
+        _virtualTPPrice = _tPPrice;        
+        _sLPrice = _tPPrice = 0;
+    }
+    
 };
