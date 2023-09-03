@@ -1,10 +1,12 @@
 #include <Object.mqh>
-#include ".\TradingBasket.mqh"
-#include ".\TradingManager.mqh"
-#include "..\Enums.mqh"
-#include "..\Constants.mqh"
+#include ".\TradingBasket.mqh";
+#include ".\TradingManager.mqh";
+#include "..\Enums.mqh";
+#include "..\Constants.mqh";
+#include "..\Options.mqh";
 #include "..\Recovery\GridGapCalculator.mqh";
 #include "..\Recovery\RecoveryLotSizeCalculator.mqh";
+#include "..\Signals\SignalManager.mqh";
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh";
 #include "..\UI\Reporter.mqh";
 
@@ -15,34 +17,22 @@ private:
     CNormalLotSizeCalculator *_normalLotCalc;
     CRecoveryLotSizeCalculator *_recoveryLotCalc;
     CGridGapCalculator *_gridGapCalc;
-
-    ENUM_RECOVERY_MODE _recoveryMode;
-    bool _showTpLine;
-    bool _useVirtualSLTP;
-    double _recoveryTpPoints;
+    CSignalManager *_signalManager;
+    RecoveryOptions _options;
     double _recoveryAvgTPrice;
-    int _maxGridOrderCount;
 
 public:
-    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
-                                       int maxGridOrderCount, ENUM_RECOVERY_MODE recoveryMode, double recoveryTpPoints,
-                                       ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize, ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode,
-                                       string gridCustomSeries, int gridATRPeriod, ENUM_VALUE_ACTION gridATRValueAction, double gridATRValue,
-                                       int gridATRMin, int _gridATRMax, bool showTPLine, bool useVirtualSLTP)
+    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CSignalManager *signalManager, CNormalLotSizeCalculator *normalLotCalc,
+                                       CRecoveryLotSizeCalculator *recoveryLotCalc, RecoveryOptions &options)
         : CTradingManager(basket, reporter)
     {
+        _options = options;
         _basket = basket;
+        _signalManager = signalManager;
         _normalLotCalc = normalLotCalc;
         _recoveryLotCalc = recoveryLotCalc;
-        _maxGridOrderCount = maxGridOrderCount;
-        _recoveryMode = recoveryMode;
-        _recoveryTpPoints = recoveryTpPoints;
-
-        _gridGapCalc = new CGridGapCalculator(gridSizeMode, gridFixedSize, gridCustomSizeMode, gridCustomSeries,
-                                              gridATRPeriod, gridATRValueAction, gridATRValue, gridATRMin, _gridATRMax);
-
-        _showTpLine = showTPLine;
-        _useVirtualSLTP = useVirtualSLTP;
+        _gridGapCalc = new CGridGapCalculator(_basket.Symbol(), options.gridSizeMode, options.gridFixedSize, options.gridCustomSizeMode, options.gridCustomSeries,
+                                              options.gridATRPeriod, options.newBarTimeframe, options.gridATRValueAction, options.gridATRValue, options.gridATRMin, options.gridATRMax);
     }
 
 public:
@@ -79,13 +69,13 @@ public:
         if (result)
         {
             _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);
-            if (_showTpLine)
+            if (_options.showTpLine)
             {
                 _DrawPriceLine(_GetTPLineName(), _recoveryAvgTPrice, clrBlue, STYLE_DASH);
                 _DrawPriceLine(_GetAVGOpenPriceLineName(), _basket.AverageOpenPrice(), clrOrange, STYLE_DASH);
             }
 
-            if (_useVirtualSLTP)
+            if (_options.useVirtualSLTP)
             {
                 _basket.SetTradeToVirtualSLTP(newTrade.Ticket(), slPrice, _recoveryAvgTPrice);
             }
@@ -103,6 +93,7 @@ private:
     void _DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style);
     string _GetTPLineName();
     string _GetAVGOpenPriceLineName();
+    void _RemovePriceLine(string name);
 };
 
 void CRecoveryManager::OnTick()
@@ -138,55 +129,78 @@ void CRecoveryManager::OnTick()
         }
         else if (hitSL)
         {
-            if (_maxGridOrderCount != 0 && _basket.Count() >= _maxGridOrderCount)
+            if (_options.maxGridOrderCount != 0 && _basket.Count() >= _options.maxGridOrderCount)
             {
                 // Do nothing as we reached the max grid order count
+                _reporter.ReportWarning(StringFormat("RM: Reached max grid order count %d", _options.maxGridOrderCount));
             }
             else
             {
-                ENUM_ORDER_TYPE orderType = lastTrade.OrderType();
-                int nextGridGap = _gridGapCalc.CalculateNextOrderDistance(_basket.Count(), lastOpenPrice, firstTradeTp);
-                string message;
-                Trade trade;
+                bool signalBuy = _signalManager.GetSignalWithAnd(SIGNAL_BUY);
+                bool signalSell = _signalManager.GetSignalWithAnd(SIGNAL_SELL);
 
-                // Check the recovery type here to know the next direction
-                if (_recoveryMode == RECOVERY_MARTINGALE)
+                bool tradeOnlyOnSignal = !_options.gridTradeOnlyBySignal || signalBuy || signalSell;
+                bool tradeOnlyNewBar = !_options.gridTradeOnlyNewBar || constants.IsNewBar(symbol, _options.newBarTimeframe);
+
+                if (tradeOnlyOnSignal && tradeOnlyNewBar)
                 {
-                    double nextSLPrice;
-                    if (orderType == ORDER_TYPE_BUY)
+                    ENUM_ORDER_TYPE orderType = lastTrade.OrderType();
+                    int nextGridGap = _gridGapCalc.CalculateNextOrderDistance(_basket.Count(), lastOpenPrice, firstTradeTp);
+                    string message;
+                    Trade trade;
+
+                    // Check the recovery type here to know the next direction
+                    if (_options.recoveryMode == RECOVERY_MARTINGALE)
                     {
-                        nextSLPrice = ask - NormalizeDouble(nextGridGap * _Point, _Digits);
+                        double nextSLPrice = 0;
+                        bool hasSingal = false;
+                        if (orderType == ORDER_TYPE_BUY && (!_options.gridTradeOnlyBySignal || _signalManager.GetSignalWithAnd(SIGNAL_BUY)))
+                        {
+                            nextSLPrice = ask - NormalizeDouble(nextGridGap * _Point, _Digits);
+                            hasSingal = true;
+                        }
+                        else if (orderType == ORDER_TYPE_SELL && (!_options.gridTradeOnlyBySignal || _signalManager.GetSignalWithAnd(SIGNAL_SELL)))
+                        {
+                            nextSLPrice = bid + NormalizeDouble(nextGridGap * _Point, _Digits);
+                            hasSingal = true;
+                        }
+
+                        if (hasSingal)
+                        {
+                            double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
+                            if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+                            {
+                                // Done
+                            }
+                            else
+                            {
+                                // Failed to open a recovery trade
+                            }
+                        }
                     }
-                    else
+                    else if (_options.recoveryMode == RECOVERY_HEDGING)
                     {
-                        nextSLPrice = bid + NormalizeDouble(nextGridGap * _Point, _Digits);
-                    }
-                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
-                    if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
-                    {
-                        // Done
-                    }
-                    else
-                    {
-                        // Failed to open a recovery trade
-                    }
-                }
-                else if (_recoveryMode == RECOVERY_HEDGING)
-                {
-                    double nextSLPrice = ask + NormalizeDouble(nextGridGap * _Point, _Digits);
-                    ENUM_ORDER_TYPE newOrderType = orderType == ORDER_TYPE_BUY ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
-                    double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, newOrderType);
-                    if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
-                    {
-                        // Done
-                    }
-                    else
-                    {
-                        // Failed to open a recovery trade
+                        double nextSLPrice = ask + NormalizeDouble(nextGridGap * _Point, _Digits);
+                        ENUM_ORDER_TYPE newOrderType = orderType == ORDER_TYPE_BUY ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+                        double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, newOrderType);
+                        if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+                        {
+                            // Done
+                        }
+                        else
+                        {
+                            // Failed to open a recovery trade
+                        }
                     }
                 }
             }
         }
+    }
+
+    if (_basket.IsEmpty())
+    {
+        _RemovePriceLine(_GetTPLineName());
+        _RemovePriceLine(_GetAVGOpenPriceLineName());
     }
 
     // execute base class OnTick
@@ -202,6 +216,12 @@ string CRecoveryManager::_GetTPLineName()
 string CRecoveryManager::_GetAVGOpenPriceLineName()
 {
     return StringFormat("avg_open_%d", _basket.MagicNumber());
+}
+
+void CRecoveryManager::_RemovePriceLine(string name)
+{
+    if (ObjectFind(0, name) >= 0)
+        ObjectDelete(0, name);
 }
 
 void CRecoveryManager::_DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style)
@@ -229,30 +249,30 @@ void CRecoveryManager::_DrawPriceLine(string name, double price, color clr, ENUM
 double CRecoveryManager::_CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction)
 {
     double avgOpenPrice = _basket.AverageOpenPrice();
-    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? 1 : -1) * _recoveryTpPoints * _Point), _Digits);
+    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? 1 : -1) * _options.recoveryTpPoints * _Point), _Digits);
 }
 
 double CRecoveryManager::_NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction)
 {
     int basketCount = _basket.Count();
     double lotSize = 0;
-    if (_recoveryMode == RECOVERY_MARTINGALE)
+    if (_options.recoveryMode == RECOVERY_MARTINGALE)
     {
         lotSize = _basket.IsEmpty()
                       ? _normalLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction)
                       : _recoveryLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction);
     }
-    else if (_recoveryMode == RECOVERY_HEDGING)
+    else if (_options.recoveryMode == RECOVERY_HEDGING)
     {
         double sellLots = _basket.Volume(ORDER_TYPE_SELL);
         double buyLots = _basket.Volume(ORDER_TYPE_BUY);
         if (direction == ORDER_TYPE_BUY)
         {
-            lotSize = MathAbs((sellLots * ((_recoveryTpPoints + slPoints) / (double)_recoveryTpPoints)) - buyLots);
+            lotSize = MathAbs((sellLots * ((_options.recoveryTpPoints + slPoints) / (double)_options.recoveryTpPoints)) - buyLots);
         }
         else
         {
-            lotSize = MathAbs((buyLots * ((_recoveryTpPoints + slPoints) / (double)_recoveryTpPoints)) - sellLots);
+            lotSize = MathAbs((buyLots * ((_options.recoveryTpPoints + slPoints) / (double)_options.recoveryTpPoints)) - sellLots);
         }
 
         lotSize = MathCeil(lotSize / constants.LotStep(symbol)) * constants.LotStep(symbol);

@@ -60,7 +60,7 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
    case RECOVERY_LOT_ADD:
       return NormalizeLot(symbol, lastLot + _recoveryFixedLotSize);
    case RECOVERY_LOT_MULTIPLIER:
-      return lastLot * _recoveryLotMultiplier;   
+      return lastLot * _recoveryLotMultiplier;
    case RECOVERY_LOT_FIXED_CUSTOM:
    {
       switch (_martingalCustomLotMode)

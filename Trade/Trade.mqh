@@ -53,14 +53,14 @@ public:
     void SwitchToVirtualSLTP()
     {
         _virtualSLPrice = _sLPrice;
-        _virtualTPPrice = _tPPrice;        
+        _virtualTPPrice = _tPPrice;
         _sLPrice = _tPPrice = 0;
     }
-    
+
     void SwitchToVirtualSLTP(double sLPrice, double tPPrice)
     {
         _virtualSLPrice = sLPrice;
-        _virtualTPPrice = tPPrice;        
+        _virtualTPPrice = tPPrice;
         _sLPrice = _tPPrice = 0;
     }
 };

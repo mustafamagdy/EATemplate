@@ -1,8 +1,8 @@
 
 enum ENUM_VALUE_ACTION {
-   ACTION_NONE                               = -1, //As Is
-   ACTION_DEVIDE                             = 0,  //Devide
-   ACTION_MULTIPLY                           = 1,  //Multiply
+   ATR_ACTION_NONE                               = 0, //As Is
+   ATR_ACTION_DEVIDE                             = 1,  //Devide
+   ATR_ACTION_MULTIPLY                           = 2,  //Multiply
 };
 
 enum ENUM_RISK_TYPE {
@@ -34,4 +34,25 @@ enum ENUM_RECOVERY_FIXED_CUSTOM_MODE {
    RECOVERY_LOT_CUSTOM_SERIES                = 0,  //Custom Series
    RECOVERY_LOT_CUSTOM_ROLLING               = 1,  //Custom Series (Restart when finished)
    RECOVERY_LOT_CUSTOM_MULTIPLIER            = 2,  //Custom Multiplier series
+};
+
+enum ENUM_GRID_SIZE_MODE
+{
+    GRID_SIZE_FIXED = 0,        // Fixed Size
+    GRID_SIZE_FIXED_CUSTOM = 1, // Custom Series
+    GRID_SIZE_ATR = 2,          // ATR Based
+};
+
+enum ENUM_GRID_FIXED_CUSTOM_MODE
+{
+    GRID_SIZE_CUSTOM_SERIES = 0,     // Custom Fixed Series
+    GRID_SIZE_CUSTOM_ROLLING = 1,    // Custom Series (Restart when finished)
+    GRID_SIZE_CUSTOM_MULTIPLIER = 2, // Custom Multiplier Series
+};
+
+enum ENUM_SIGNAL
+{
+    SIGNAL_NUTURAL = 0,
+    SIGNAL_BUY = 1,
+    SIGNAL_SELL = 2,
 };

@@ -27,4 +27,14 @@ public:
     static const double LotStep(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP); }
     static const double Ask(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_ASK); }
     static const double Bid(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_BID); }
+
+    static const bool IsNewBar(string symbol, ENUM_TIMEFRAMES timeframe = PERIOD_CURRENT)
+    {
+        datetime currentTime = iTime(symbol, timeframe, 0);
+        static datetime previousTime = 0;
+        if (currentTime == previousTime)
+            return false;
+        previousTime = currentTime;
+        return true;
+    }
 };
