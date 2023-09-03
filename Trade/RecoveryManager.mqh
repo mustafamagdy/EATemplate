@@ -40,10 +40,10 @@ public:
     virtual bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
     {
         double slPrice = 0, tpPrice = 0;
-        double ask = SymbolInfoDouble(Symbol(), SYMBOL_ASK);
-        double bid = SymbolInfoDouble(Symbol(), SYMBOL_BID);
+        double ask = SymbolInfoDouble(_basket.Symbol(), SYMBOL_ASK);
+        double bid = SymbolInfoDouble(_basket.Symbol(), SYMBOL_BID);
         double spread = ask - bid;
-        int spread_points = (int)MathRound(spread / SymbolInfoDouble(Symbol(), SYMBOL_POINT));
+        int spread_points = (int)MathRound(spread / SymbolInfoDouble(_basket.Symbol(), SYMBOL_POINT));
         if (slPoints <= spread_points)
         {
             message = "SL points is less than the spread points";
