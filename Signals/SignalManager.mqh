@@ -38,7 +38,7 @@ public:
         return true;
     }
 
-    ENUM_SIGNAL GetSignalWithOr(ENUM_SIGNAL signal)
+    bool GetSignalWithOr(ENUM_SIGNAL signal)
     {
         for (int i = 0; i < ArraySize(_signals); i++)
         {
