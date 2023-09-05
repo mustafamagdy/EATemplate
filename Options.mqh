@@ -17,7 +17,7 @@ struct RecoveryOptions
     int gridATRPeriod;
     ENUM_TIMEFRAMES gridATRTimeframe;
     ENUM_VALUE_ACTION gridATRValueAction;
-    double gridATRValue;
+    double gridATRActionValue;
     int gridATRMin;
     int gridATRMax;
 };

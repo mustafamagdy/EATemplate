@@ -32,7 +32,7 @@ public:
         _normalLotCalc = normalLotCalc;
         _recoveryLotCalc = recoveryLotCalc;
         _gridGapCalc = new CGridGapCalculator(_basket.Symbol(), options.gridSizeMode, options.gridFixedSize, options.gridCustomSizeMode, options.gridCustomSeries,
-                                              options.gridATRPeriod, options.newBarTimeframe, options.gridATRValueAction, options.gridATRValue, options.gridATRMin, options.gridATRMax);
+                                              options.gridATRPeriod, options.newBarTimeframe, options.gridATRValueAction, options.gridATRActionValue, options.gridATRMin, options.gridATRMax);
     }
 
 public:
@@ -65,7 +65,7 @@ public:
 
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
     {
-        bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, 0, 0, comment, message, newTrade);
+        bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, slPrice, 0, comment, message, newTrade);
         if (result)
         {
             _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);
@@ -154,12 +154,12 @@ void CRecoveryManager::OnTick()
                     {
                         double nextSLPrice = 0;
                         bool hasSingal = false;
-                        if (orderType == ORDER_TYPE_BUY && (!_options.gridTradeOnlyBySignal || _signalManager.GetSignalWithAnd(SIGNAL_BUY)))
+                        if (orderType == ORDER_TYPE_BUY && (!_options.gridTradeOnlyBySignal || signalBuy))
                         {
                             nextSLPrice = ask - NormalizeDouble(nextGridGap * _Point, _Digits);
                             hasSingal = true;
                         }
-                        else if (orderType == ORDER_TYPE_SELL && (!_options.gridTradeOnlyBySignal || _signalManager.GetSignalWithAnd(SIGNAL_SELL)))
+                        else if (orderType == ORDER_TYPE_SELL && (!_options.gridTradeOnlyBySignal || signalSell))
                         {
                             nextSLPrice = bid + NormalizeDouble(nextGridGap * _Point, _Digits);
                             hasSingal = true;

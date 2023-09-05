@@ -8,6 +8,9 @@ private:
    CIndicatorIBands *_indi;
    string _symbol;
    ENUM_TIMEFRAMES _timeframe;
+   bool _reverseSignal;
+
+   ENUM_SIGNAL _prevSignal;
 
 private:
    bool ValidateInputs();
@@ -18,18 +21,23 @@ public:
    ENUM_SIGNAL GetSignal();
 
 public:
-   CBandsSignal(string symbol, ENUM_TIMEFRAMES timeframe, int period, double deviation, ENUM_APPLIED_PRICE appliedPrice);
-   ~CBandsSignal() {}
+   CBandsSignal(string symbol, ENUM_TIMEFRAMES timeframe, int period, double deviation, ENUM_APPLIED_PRICE appliedPrice, bool reverseSignal = false);
+   ~CBandsSignal() {
+      delete _indi;
+   }
 };
 
-CBandsSignal::CBandsSignal(string symbol, ENUM_TIMEFRAMES timeframe, int period, double deviation, ENUM_APPLIED_PRICE appliedPrice)
+CBandsSignal::CBandsSignal(string symbol, ENUM_TIMEFRAMES timeframe, int period, double deviation, ENUM_APPLIED_PRICE appliedPrice, bool reverseSignal)
 {
    _indi = new CIndicatorIBands(symbol, timeframe, period, deviation, appliedPrice);
    _symbol = symbol;
    _timeframe = timeframe;
+   _reverseSignal = reverseSignal;
+
+   _prevSignal = SIGNAL_NUTURAL;
 }
 
-ENUM_SIGNAL CBandsSignal::CalcSignal(void)
+ENUM_SIGNAL CBandsSignal::CalcSignal()
 {
 #ifdef __MQL4__
    double upperBand = _indi.GetValue(UPPER_BAND, 0);
@@ -45,11 +53,11 @@ ENUM_SIGNAL CBandsSignal::CalcSignal(void)
 
    if (high >= upperBand)
    {
-      return SIGNAL_SELL;
+      return _reverseSignal ? SIGNAL_BUY : SIGNAL_SELL;
    }
    else if (low <= lowerBand)
    {
-      return SIGNAL_BUY;
+      return _reverseSignal ? SIGNAL_SELL : SIGNAL_BUY;
    }
    else
    {
@@ -57,15 +65,19 @@ ENUM_SIGNAL CBandsSignal::CalcSignal(void)
    }
 }
 
+
+//if(prevSignal == SIGNAL_NUTURAL && signal == SIGNAL_SELL) {
+//DebugBreak();
+//}
+
 ENUM_SIGNAL CBandsSignal::GetSignal(void)
 {
-
-   static ENUM_SIGNAL prevSignal = CalcSignal();
+   
    ENUM_SIGNAL signal = CalcSignal();
 
-   if (prevSignal != signal)
+   if (_prevSignal != signal)
    {
-      prevSignal = signal;
+      _prevSignal = signal;
       return signal;
    }
 

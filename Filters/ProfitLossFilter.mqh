@@ -2,19 +2,19 @@
 
 #include "FilterBase.mqh"
 
-class CSpreadFilter : public CFilterBase
+class CProfitLossFilter : public CFilterBase
 {
 private:
-    int _maxValue;
+    double _maxLoss;
+    double _maxProfit;
     string _symbol;
 
 public:
-    CSpreadFilter(string symbol, int maxValue)
+    CProfitLossFilter(string symbol)
     {
-        _maxValue = maxValue;
         _symbol = symbol;
     }
-    ~CSpreadFilter()
+    ~CProfitLossFilter()
     {
     }
 
@@ -25,6 +25,7 @@ public:
         double bid = SymbolInfoDouble(_symbol, SYMBOL_BID);
         double spread = ask - bid;
         int spread_points = (int)MathRound(spread / SymbolInfoDouble(_symbol, SYMBOL_POINT));
-        return (_maxValue == 0 || spread_points <= _maxValue);
+        // return (_maxValue == 0 || spread_points <= _maxValue);
+        return (false);
     }
 };

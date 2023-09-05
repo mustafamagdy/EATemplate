@@ -27,6 +27,7 @@ public:
 
     bool GetSignalWithAnd(ENUM_SIGNAL signal)
     {
+    //if(signal == SIGNAL_SELL) DebugBreak();
         for (int i = 0; i < ArraySize(_signals); i++)
         {
             if (_signals[i].GetSignal() != signal)

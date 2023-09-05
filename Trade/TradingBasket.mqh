@@ -13,8 +13,6 @@ enum ENUM_BASKET_STATUS
 class CTradingBasket : public CObject
 {
 private:
-    CTrade _trade;
-    CPositionInfo _position;
     Trade _trades[];
     ENUM_BASKET_STATUS _basketStatus;
     long _magicNumber;
@@ -62,7 +60,6 @@ CTradingBasket::CTradingBasket(string symbol, long magicNumber)
 {
     _symbol = symbol;
     _magicNumber = magicNumber;
-    _trade.SetExpertMagicNumber(magicNumber);
     _basketStatus = BASKET_CLOSED;
     ArrayResize(_trades, 0);
 }
@@ -83,6 +80,8 @@ void CTradingBasket::SetBasketSlPrice(double slPrice)
     if (IsEmpty())
         return;
 
+    CPositionInfo _position;
+    CTrade _trade;
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
@@ -95,6 +94,8 @@ void CTradingBasket::SetBasketSlPrice(double slPrice)
 
 void CTradingBasket::SetTradeToVirtualSLTP(ulong ticket, double slPrice, double tpPrice)
 {
+    CPositionInfo _position;
+    CTrade _trade;
     for (int i = Count() - 1; i >= 0; i--)
     {
         if (_trades[i].Ticket() != ticket)
@@ -128,6 +129,8 @@ void CTradingBasket::SwitchTradeToVirtualSLTP(ulong ticket)
     if (IsEmpty())
         return;
 
+    CPositionInfo _position;
+    CTrade _trade;
     for (int i = Count() - 1; i >= 0; i--)
     {
         if (_trades[i].Ticket() != ticket)
@@ -178,8 +181,10 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
         message = StringFormat("Basket is %s, cannot receive orders now", EnumToString(_basketStatus));
         return (false);
     }
-    
+
     MqlTradeResult result;
+    CTrade _trade;
+    _trade.SetExpertMagicNumber(_magicNumber);
     _trade.PositionOpen(_symbol, orderType, volume, price, slPrice, tpPrice, comment);
     _trade.Result(result);
 
@@ -244,11 +249,12 @@ double CTradingBasket::AverageOpenPrice()
 
 double CTradingBasket::Profit()
 {
+    CPositionInfo _position;
     double totalProfit = 0.0;
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
-        if (PositionSelectByTicket(ticket))
+        if (_position.SelectByTicket(ticket))
         {
             totalProfit += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
         }
@@ -284,11 +290,13 @@ bool CTradingBasket::LastTrade(Trade &trade)
 
 void CTradingBasket::CloseBasketOrders()
 {
+    CTrade _trade;
+    CPositionInfo _position;
     _basketStatus = BASKET_CLOSING;
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
-        if (PositionSelectByTicket(ticket))
+        if (_position.SelectByTicket(ticket))
         {
             if (_trade.PositionClose(ticket, ULONG_MAX))
             {
@@ -309,11 +317,12 @@ void CTradingBasket::CloseBasketOrders()
 
 void CTradingBasket::_UpdateCurrentTrades()
 {
+   CPositionInfo _position;
     // Cleanup the basket
     for (int i = Count() - 1; i >= 0; i--)
     {
         ulong ticket = _trades[i].Ticket();
-        if (!PositionSelectByTicket(ticket))
+        if (!_position.SelectByTicket(ticket))
         {
             ArrayRemove(_trades, i, 1);
         }
@@ -336,6 +345,8 @@ void CTradingBasket::_UpdateAvgTpForBasketTrades()
 {
     if (IsEmpty())
         return;
+    CPositionInfo _position;
+    CTrade _trade;
 
     for (int i = Count() - 1; i >= 0; i--)
     {
