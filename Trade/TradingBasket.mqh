@@ -40,8 +40,8 @@ public:
 
 public:
     void SetBasketAvgTpPrice(double tpPrice);
-    bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade);
-    bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade);
+    bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string &message, Trade &newTrade, int virtualSLPoints, int virtualTPPoints, string comment);
+    bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string &message, Trade &newTrade, double virtualSLPrice, double virtualTPPrice, string comment);
     void SetBasketSlPrice(double slPrice);
     void SwitchTradeToVirtualSLTP(ulong ticket);
     void SetTradeToVirtualSLTP(ulong ticket, double slPrice, double tpPrice);
@@ -146,7 +146,7 @@ void CTradingBasket::SwitchTradeToVirtualSLTP(ulong ticket)
     }
 }
 
-bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
+bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string &message, Trade &newTrade, int virtualSLPoints, int virtualTPPoints, string comment)
 {
     double slPrice = 0, tpPrice = 0;
     double ask = SymbolInfoDouble(_symbol, SYMBOL_ASK);
@@ -170,10 +170,11 @@ bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER
         tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
     }
 
-    return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
+    return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPoints, virtualTPPoints, comment);
 }
 
-bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
+bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice,
+                                        string &message, Trade &newTrade, double virtualSLPrice, double virtualTPPrice, string comment)
 {
     if (_basketStatus == BASKET_CLOSING)
     {
@@ -193,7 +194,7 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
         Trade trade;
         trade.Init(result.order, _trade.RequestMagic(), _trade.RequestSymbol(), orderType,
                    result.price, result.volume, 0, _trade.RequestSL(), _trade.RequestTP(),
-                   result.comment);
+                   virtualSLPrice, virtualTPPrice, result.comment);
 
         ArrayResize(_trades, ArraySize(_trades) + 1);
         _trades[ArraySize(_trades) - 1] = trade;
@@ -317,7 +318,7 @@ void CTradingBasket::CloseBasketOrders()
 
 void CTradingBasket::_UpdateCurrentTrades()
 {
-   CPositionInfo _position;
+    CPositionInfo _position;
     // Cleanup the basket
     for (int i = Count() - 1; i >= 0; i--)
     {

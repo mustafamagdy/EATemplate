@@ -20,7 +20,8 @@ public:
     void Init(ulong ticket, long magicNumber, string symbol,
               ENUM_ORDER_TYPE orderType, double openPrice,
               double volume, double fees, double sLPrice,
-              double tPPrice, string comment)
+              double tPPrice, double virtualSLPrice, 
+              double virtualTPPrice, string comment)
     {
         _ticket = ticket;
         _magicNumber = magicNumber;
@@ -31,8 +32,8 @@ public:
         _fees = fees;
         _sLPrice = sLPrice;
         _tPPrice = tPPrice;
-        _virtualSLPrice = sLPrice;
-        _virtualTPPrice = tPPrice;
+        _virtualSLPrice = virtualSLPrice;
+        _virtualTPPrice = virtualTPPrice;
         _comment = comment;
     }
 

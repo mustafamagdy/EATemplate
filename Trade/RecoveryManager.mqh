@@ -65,7 +65,7 @@ public:
 
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
     {
-        bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, slPrice, 0, comment, message, newTrade);
+        bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, 0, 0, message, newTrade, slPrice, tpPrice, comment);
         if (result)
         {
             _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);
