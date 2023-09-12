@@ -132,12 +132,7 @@ void CRecoveryManager::OnTick()
             _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
         }
 
-        double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
-        double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
-        double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved) * _Point;
-
-        _recoverySLPrice = currentAvgOpenPrice + (directionFactor * dynamicStopLossDistance); // Update the stop loss based on the dynamic distance
-
+       
         bool hitTP = false;
         
         hitTP = isItBuy ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
@@ -145,6 +140,10 @@ void CRecoveryManager::OnTick()
         switch(_options.basketSLMode)
         {
             case SL_MODE_AVERAGE:
+                double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
+                double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
+                double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved) * _Point;
+                _recoverySLPrice = currentAvgOpenPrice + (directionFactor * dynamicStopLossDistance); // Update the stop loss based on the dynamic distance
                 hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
                 break;
             case SL_MODE_INDIVIDUAL:
@@ -167,7 +166,6 @@ void CRecoveryManager::OnTick()
         {
             if (_options.maxGridOrderCount != 0 && _basket.Count() >= _options.maxGridOrderCount)
             {
-                // Do nothing as we reached the max grid order count
                 _reporter.ReportWarning(StringFormat("RM: Reached max grid order count %d", _options.maxGridOrderCount));
             }
             else
