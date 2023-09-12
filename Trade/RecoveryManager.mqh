@@ -77,11 +77,6 @@ public:
                 _DrawPriceLine(_GetTPLineName(), _recoveryAvgTPrice, clrBlue, STYLE_DASH);
             }
 
-            if (_options.showSLLine && _recoverySLPrice > 0)
-            {
-                _DrawPriceLine(_GetSLLineName(), _recoverySLPrice, clrIndianRed, STYLE_DASH);
-            }
-
             if (_options.useVirtualSLTP)
             {
                 _basket.SetTradeToVirtualSLTP(newTrade.Ticket(), slPrice, _recoveryAvgTPrice);
@@ -129,39 +124,50 @@ void CRecoveryManager::OnTick()
         if (_basket.Count() == 1)
         {
             _recoveryAvgTPrice = firstTrade.VirtualTakeProfit();
-            _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
+            if (_options.recoverySLPoints > 0)
+            {
+                _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
+            }
         }
 
         bool hitTP = false;
 
         hitTP = isItBuy ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
         bool hitSL = false;
-        
-        switch (_options.basketSLMode)
+
+        if (_options.recoverySLPoints > 0)
         {
-        case SL_MODE_AVERAGE:
-        {
-            double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
-            double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
-            double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved) * _Point;
-            _recoverySLPrice = currentAvgOpenPrice + (directionFactor * dynamicStopLossDistance); // Update the stop loss based on the dynamic distance
-            hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
-            break;
-        }
-        case SL_MODE_INDIVIDUAL:
-        {
-            // should be handled on each order inside the basket
-            break;
-        }
-        case SL_MODE_GAP_FROM_FIRST:
-        {
-            double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _Point;
-            hitSL = distance >= _options.recoverySLPoints;
-            break;
-        }
+            switch (_options.basketSLMode)
+            {
+            case SL_MODE_AVERAGE:
+            {
+                double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
+                double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
+                double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved);
+                _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * dynamicStopLossDistance * _Point); // Update the stop loss based on the dynamic distance
+                hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
+                break;
+            }
+            case SL_MODE_INDIVIDUAL:
+            {
+                // should be handled on each order inside the basket
+                break;
+            }
+            case SL_MODE_GAP_FROM_FIRST:
+            {
+                double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _Point;
+                _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
+                hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice); // distance >= _options.recoverySLPoints;
+                break;
+            }
+            }
         }
 
         bool hitNextOrderOpen = isItBuy ? bid <= lastTradeSL : ask >= lastTradeSL;
+        if (_options.showSLLine && _recoverySLPrice > 0)
+        {
+            _DrawPriceLine(_GetSLLineName(), _recoverySLPrice, clrIndianRed, STYLE_DASH);
+        }
 
         if (hitTP || hitSL)
         {
@@ -333,5 +339,6 @@ double CRecoveryManager::_NextLotSize(string symbol, int slPoints, double lastLo
         lotSize = constants.MinLot(symbol);
     }
 
+    lotSize = _options.maxGridLots > 0 ? MathMin(lotSize, _options.maxGridLots) : lotSize;
     return _normalLotCalc.NormalizeLot(symbol, lotSize);
 }

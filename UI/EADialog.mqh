@@ -59,6 +59,8 @@ protected:
     void OnClickButton3(void);
     void OnChangeSpinEdit(void);
     void OnChangeComboBox(void);
+
+
 };
 //+------------------------------------------------------------------+
 //| Event Handling                                                   |
@@ -82,6 +84,9 @@ CEADialog::CEADialog(void)
 CEADialog::~CEADialog(void)
 {
 }
+
+
+
 //+------------------------------------------------------------------+
 //| Create                                                           |
 //+------------------------------------------------------------------+
@@ -89,6 +94,7 @@ bool CEADialog::Create(const long chart, const string name, const int subwin, co
 {
     if (!CAppDialog::Create(chart, name, subwin, x1, y1, x2, y2))
         return (false);
+
     //--- create dependent controls
     if (!CreateEdit())
         return (false);
@@ -99,7 +105,7 @@ bool CEADialog::Create(const long chart, const string name, const int subwin, co
     if (!CreateButton3())
         return (false);
     if (!CreateSpinEdit())
-        return (false);    
+        return (false);
     if (!CreateComboBox())
         return (false);
     //--- succeed
