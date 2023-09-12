@@ -20,6 +20,7 @@ private:
     CSignalManager *_signalManager;
     RecoveryOptions _options;
     double _recoveryAvgTPrice;
+    double _recoverySLPrice;
 
 public:
     CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CSignalManager *signalManager, CNormalLotSizeCalculator *normalLotCalc,
@@ -68,11 +69,17 @@ public:
         bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, 0, 0, message, newTrade, slPrice, tpPrice, comment);
         if (result)
         {
-            _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);
-            if (_options.showTpLine)
+            _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);            
+            _DrawPriceLine(_GetAVGOpenPriceLineName(), _basket.AverageOpenPrice(), clrOrange, STYLE_DASH);
+
+            if (_options.showTpLine && _recoveryAvgTPrice > 0)
             {
                 _DrawPriceLine(_GetTPLineName(), _recoveryAvgTPrice, clrBlue, STYLE_DASH);
-                _DrawPriceLine(_GetAVGOpenPriceLineName(), _basket.AverageOpenPrice(), clrOrange, STYLE_DASH);
+            }
+
+            if (_options.showSLLine && _recoverySLPrice > 0)
+            {
+                _DrawPriceLine(_GetSLLineName(), _recoverySLPrice, clrIndianRed, STYLE_DASH);
             }
 
             if (_options.useVirtualSLTP)
@@ -81,7 +88,7 @@ public:
             }
             else
             {
-                // TODO: set trades individual SL/TP
+                _basket.UpdateSLTP(_options.recoverySLPoints, _recoveryAvgTPrice);
             }
         }
         return result;
@@ -90,8 +97,10 @@ public:
 private:
     double _NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction);
     double _CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction);
+    double _CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direction);
     void _DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style);
     string _GetTPLineName();
+    string _GetSLLineName();
     string _GetAVGOpenPriceLineName();
     void _RemovePriceLine(string name);
 };
@@ -105,11 +114,6 @@ void CRecoveryManager::OnTick()
         Trade lastTrade;
         _basket.LastTrade(lastTrade);
 
-        if (_basket.Count() == 1)
-        {
-            _recoveryAvgTPrice = firstTrade.VirtualTakeProfit();
-        }
-
         double lastLot = lastTrade.Volume();
         double lastOpenPrice = lastTrade.OpenPrice();
         double firstOpenPrice = firstTrade.OpenPrice();
@@ -120,14 +124,29 @@ void CRecoveryManager::OnTick()
         double ask = constants.Ask(symbol);
         double bid = constants.Bid(symbol);
 
-        bool hitTP = lastTrade.OrderType() == ORDER_TYPE_BUY ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
-        bool hitSL = lastTrade.OrderType() == ORDER_TYPE_BUY ? bid <= lastTradeSL : ask >= lastTradeSL;
+        bool isItBuy = lastTrade.OrderType() == ORDER_TYPE_BUY;
+        double directionFactor = (isItBuy ? -1 : 1);
+        if (_basket.Count() == 1)
+        {
+            _recoveryAvgTPrice = firstTrade.VirtualTakeProfit();
+            _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
+        }
 
-        if (hitTP)
+        double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
+        double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
+        double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved) * _Point;
+
+        _recoverySLPrice = currentAvgOpenPrice + (directionFactor * dynamicStopLossDistance); // Update the stop loss based on the dynamic distance
+
+        bool hitTP = isItBuy ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
+        bool hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
+        bool hitNextOrderOpen = isItBuy ? bid <= lastTradeSL : ask >= lastTradeSL;
+
+        if (hitTP || hitSL)
         {
             _basket.CloseBasketOrders();
         }
-        else if (hitSL)
+        else if (hitNextOrderOpen)
         {
             if (_options.maxGridOrderCount != 0 && _basket.Count() >= _options.maxGridOrderCount)
             {
@@ -200,6 +219,7 @@ void CRecoveryManager::OnTick()
     if (_basket.IsEmpty())
     {
         _RemovePriceLine(_GetTPLineName());
+        _RemovePriceLine(_GetSLLineName());
         _RemovePriceLine(_GetAVGOpenPriceLineName());
     }
 
@@ -211,6 +231,11 @@ void CRecoveryManager::OnTick()
 string CRecoveryManager::_GetTPLineName()
 {
     return StringFormat("avg_tp_%d", _basket.MagicNumber());
+}
+
+string CRecoveryManager::_GetSLLineName()
+{
+    return StringFormat("avg_sl_%d", _basket.MagicNumber());
 }
 
 string CRecoveryManager::_GetAVGOpenPriceLineName()
@@ -250,6 +275,12 @@ double CRecoveryManager::_CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direc
 {
     double avgOpenPrice = _basket.AverageOpenPrice();
     return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? 1 : -1) * _options.recoveryTpPoints * _Point), _Digits);
+}
+
+double CRecoveryManager::_CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direction)
+{
+    double avgOpenPrice = _basket.AverageOpenPrice();
+    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? -1 : 1) * _options.recoverySLPoints * _Point), _Digits);
 }
 
 double CRecoveryManager::_NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction)

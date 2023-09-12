@@ -48,6 +48,7 @@ public:
     bool GetTradeByIndex(int index, Trade &trade);
     bool RemoveTradeByIndex(int index);
     void CloseBasketOrders();
+    bool UpdateSLTP(int recoverySLPoints, double tpPrice);
     void OnTick();
 
 private:
@@ -107,6 +108,36 @@ void CTradingBasket::SetTradeToVirtualSLTP(ulong ticket, double slPrice, double 
             _trade.PositionModify(ticket, 0, 0);
         }
     }
+}
+
+bool CTradingBasket::UpdateSLTP(int recoverySLPoints, double tpPrice)
+{
+    CTrade _trade;
+    CPositionInfo _position;
+    double avgOpenPrice = AverageOpenPrice();
+    for (int i = Count() - 1; i >= 0; i--)
+    {
+        ulong ticket = _trades[i].Ticket();
+        if (_position.SelectByTicket(ticket))
+        {
+            double slPrice = 0;
+            if (_position.PositionType() == POSITION_TYPE_BUY)
+            {
+                slPrice = recoverySLPoints == 0 ? 0 : avgOpenPrice - (recoverySLPoints * SymbolInfoDouble(_symbol, SYMBOL_POINT));
+            }
+            else if (_position.PositionType() == POSITION_TYPE_SELL)
+            {
+                slPrice = recoverySLPoints == 0 ? 0 : avgOpenPrice + (recoverySLPoints * SymbolInfoDouble(_symbol, SYMBOL_POINT));
+            }
+
+            if (!_trade.PositionModify(ticket, slPrice, tpPrice))
+            {
+                return (false);
+            }
+        }
+    }
+
+    return (true);
 }
 
 bool CTradingBasket::GetTradeByIndex(int index, Trade &trade)
@@ -305,7 +336,7 @@ void CTradingBasket::CloseBasketOrders()
             }
             else
             {
-                // TODO
+                PrintFormat("Failed to close position %d", ticket);
             }
         }
     }
@@ -337,6 +368,11 @@ void CTradingBasket::_UpdateCurrentTrades()
 
 void CTradingBasket::OnTick()
 {
+    if (_basketStatus == BASKET_CLOSING)
+    {
+        CTradingBasket::CloseBasketOrders();
+    }
+
     CTradingBasket::_UpdateCurrentTrades();
 }
 

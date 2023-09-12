@@ -3,6 +3,7 @@
 struct RecoveryOptions
 {
     bool showTpLine;
+    bool showSLLine;
     bool useVirtualSLTP;
     bool gridTradeOnlyBySignal;
     bool gridTradeOnlyNewBar;
@@ -20,4 +21,5 @@ struct RecoveryOptions
     double gridATRActionValue;
     int gridATRMin;
     int gridATRMax;
+    int recoverySLPoints;
 };
