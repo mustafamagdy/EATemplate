@@ -22,4 +22,5 @@ struct RecoveryOptions
     int gridATRMin;
     int gridATRMax;
     int recoverySLPoints;
+    ENUM_BASKET_SLTP_MODE basketSLMode;
 };

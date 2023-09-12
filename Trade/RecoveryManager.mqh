@@ -69,7 +69,7 @@ public:
         bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, 0, 0, message, newTrade, slPrice, tpPrice, comment);
         if (result)
         {
-            _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);            
+            _recoveryAvgTPrice = _CalculateAvgTPPriceForMartingale(orderType);
             _DrawPriceLine(_GetAVGOpenPriceLineName(), _basket.AverageOpenPrice(), clrOrange, STYLE_DASH);
 
             if (_options.showTpLine && _recoveryAvgTPrice > 0)
@@ -132,29 +132,34 @@ void CRecoveryManager::OnTick()
             _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
         }
 
-       
         bool hitTP = false;
-        
+
         hitTP = isItBuy ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
         bool hitSL = false;
-        switch(_options.basketSLMode)
-        {
-            case SL_MODE_AVERAGE:
-                double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
-                double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
-                double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved) * _Point;
-                _recoverySLPrice = currentAvgOpenPrice + (directionFactor * dynamicStopLossDistance); // Update the stop loss based on the dynamic distance
-                hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
-                break;
-            case SL_MODE_INDIVIDUAL:
-                //should be handled on each order inside the basket
-                break;
-            case SL_MODE_GAP_FROM_FIRST:
-                double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _Point;
-                hitSL = distance >=  _options.recoverySLPoints;
-                break;
-        }
         
+        switch (_options.basketSLMode)
+        {
+        case SL_MODE_AVERAGE:
+        {
+            double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
+            double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
+            double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved) * _Point;
+            _recoverySLPrice = currentAvgOpenPrice + (directionFactor * dynamicStopLossDistance); // Update the stop loss based on the dynamic distance
+            hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
+            break;
+        }
+        case SL_MODE_INDIVIDUAL:
+        {
+            // should be handled on each order inside the basket
+            break;
+        }
+        case SL_MODE_GAP_FROM_FIRST:
+        {
+            double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _Point;
+            hitSL = distance >= _options.recoverySLPoints;
+            break;
+        }
+        }
 
         bool hitNextOrderOpen = isItBuy ? bid <= lastTradeSL : ask >= lastTradeSL;
 

@@ -14,7 +14,7 @@ protected:
   double mBuffer[];
 
 public:
-  CIndicatorBase();
+  CIndicatorBase(string symbol, int timeframe);
   ~CIndicatorBase();
 
   bool IsValid() { return (mHandle != INVALID_HANDLE); }
@@ -27,8 +27,10 @@ public:
 #endif
 };
 
-CIndicatorBase::CIndicatorBase()
+CIndicatorBase::CIndicatorBase(string symbol, int timeframe)
 {
+  mSymbol = symbol;
+  mTimeframe = timeframe;
   mHandle = 0;
   ArraySetAsSeries(mBuffer, true);
 }

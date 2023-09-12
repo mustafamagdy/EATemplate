@@ -21,9 +21,7 @@ public:
 };
 
 CIndicatorIBands::CIndicatorIBands(string symbol, ENUM_TIMEFRAMES timeframe, int period, double deviation, ENUM_APPLIED_PRICE appliedPrice)
-      : CIndicatorBase() {
-  mSymbol = symbol;
-  mTimeframe = timeframe;
+      : CIndicatorBase(symbol, timeframe) {
   mPeriod = period;
   mDeviation = deviation;
   mAppliedPrice = appliedPrice;

@@ -18,10 +18,8 @@ public:
 };
 
 CIndicatorATR::CIndicatorATR(string symbol, ENUM_TIMEFRAMES timeframe, int period, int shift)
-    : CIndicatorBase()
+    : CIndicatorBase(symbol, timeframe)
 {
-  mSymbol = symbol;
-  mTimeframe = timeframe;
   mPeriod = period;
   mShift = shift;
 

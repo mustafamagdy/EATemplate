@@ -1,5 +1,5 @@
 #include "SignalBase.mqh";
-#include "..\Indicators\CIndicatorZigZag.mqh";
+#include "..\Indicators\IndicatorZigZag.mqh";
 
 class CZigZagSignal : public CSignalBase
 {
@@ -39,8 +39,8 @@ CZigZagSignal::CZigZagSignal(string symbol, ENUM_TIMEFRAMES timeframe, int depth
 
 ENUM_SIGNAL CZigZagSignal::CalcSignal()
 {
-   double currentZigZag = _indi->GetZigZagValue(0);
-   double previousZigZag = _indi->GetZigZagValue(1);
+   double currentZigZag = _indi.GetValue(0);
+   double previousZigZag = _indi.GetValue(1);
 
    if (currentZigZag > previousZigZag)
    {
