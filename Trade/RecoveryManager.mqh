@@ -138,8 +138,25 @@ void CRecoveryManager::OnTick()
 
         _recoverySLPrice = currentAvgOpenPrice + (directionFactor * dynamicStopLossDistance); // Update the stop loss based on the dynamic distance
 
-        bool hitTP = isItBuy ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
-        bool hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
+        bool hitTP = false;
+        
+        hitTP = isItBuy ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
+        bool hitSL = false;
+        switch(_options.basketSLMode)
+        {
+            case SL_MODE_AVERAGE:
+                hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
+                break;
+            case SL_MODE_INDIVIDUAL:
+                //should be handled on each order inside the basket
+                break;
+            case SL_MODE_GAP_FROM_FIRST:
+                double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _Point;
+                hitSL = distance >=  _options.recoverySLPoints;
+                break;
+        }
+        
+
         bool hitNextOrderOpen = isItBuy ? bid <= lastTradeSL : ask >= lastTradeSL;
 
         if (hitTP || hitSL)
