@@ -189,11 +189,11 @@ void CRecoveryManager::OnTick()
                             double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, orderType);
                             if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                             {
-                                // Done
+                                _reporter.ReportTradeOpen(orderType, nextLot);
                             }
                             else
                             {
-                                // Failed to open a recovery trade
+                                _reporter.ReportError("Failed to open grid order");
                             }
                         }
                     }
@@ -204,11 +204,11 @@ void CRecoveryManager::OnTick()
                         double nextLot = _NextLotSize(symbol, nextGridGap, lastLot, newOrderType);
                         if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                         {
-                            // Done
+                            _reporter.ReportTradeOpen(orderType, nextLot);
                         }
                         else
                         {
-                            // Failed to open a recovery trade
+                            _reporter.ReportError("Failed to open grid order");
                         }
                     }
                 }
