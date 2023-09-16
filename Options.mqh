@@ -11,6 +11,7 @@ struct RecoveryOptions
     ENUM_RECOVERY_MODE recoveryMode;
     double recoveryTpPoints;
     int maxGridOrderCount;
+    ENUM_BASKET_MAX_ORDER_BEHAVIOUR basketMaxOrderBehaviour;
     double maxGridLots;
     ENUM_GRID_SIZE_MODE gridSizeMode;
     int gridFixedSize;

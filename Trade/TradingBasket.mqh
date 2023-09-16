@@ -2,6 +2,7 @@
 #include <Trade\PositionInfo.mqh>
 #include <Object.mqh>
 #include "Trade.mqh"
+#include "..\UI\Reporter.mqh"
 
 enum ENUM_BASKET_STATUS
 {
@@ -13,6 +14,7 @@ enum ENUM_BASKET_STATUS
 class CTradingBasket : public CObject
 {
 private:
+    CReporter _reporter;
     Trade _trades[];
     ENUM_BASKET_STATUS _basketStatus;
     long _magicNumber;
@@ -49,6 +51,7 @@ public:
     bool RemoveTradeByIndex(int index);
     void CloseBasketOrders();
     bool UpdateSLTP(int recoverySLPoints, double tpPrice);
+    void CloseFirstOrder();
     void OnTick();
 
 private:
@@ -106,6 +109,31 @@ void CTradingBasket::SetTradeToVirtualSLTP(ulong ticket, double slPrice, double 
         if (_position.SelectByTicket(ticket))
         {
             _trade.PositionModify(ticket, 0, 0);
+        }
+    }
+}
+
+void CTradingBasket::CloseFirstOrder()
+{
+    CPositionInfo _position;
+    CTrade _trade;
+    if (ArraySize(_trades) > 0)
+    {
+        ulong ticket = _trades[0].Ticket();
+        if (_position.SelectByTicket(ticket))
+        {
+            if (_trade.PositionClose(ticket, ULONG_MAX))
+            {
+                ArrayRemove(_trades, 0, 1);
+            }
+            else
+            {
+                _reporter.ReportError("Failed to close first order of the basket");
+            }
+        }
+        else
+        {
+            _reporter.ReportError("Failed to close first order of the basket");
         }
     }
 }

@@ -166,8 +166,11 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
 
     if (_options.maxGridOrderCount != 0 && _basket.Count() >= _options.maxGridOrderCount)
     {
-        _reporter.ReportWarning(StringFormat("RM: Reached max grid order count %d", _options.maxGridOrderCount));
-        return;
+        if (_options.basketMaxOrderBehaviour == MAX_ORDER_STOP_ADDING_GRID)
+        {
+            _reporter.ReportWarning(StringFormat("RM: Reached max grid order count %d", _options.maxGridOrderCount));
+            return;
+        }
     }
 
     bool signalBuy = _signalManager.GetSignalWithAnd(SIGNAL_BUY);
@@ -205,6 +208,13 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
                 if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                 {
                     _reporter.ReportTradeOpen(orderType, nextLot);
+                    if (_options.maxGridOrderCount != 0 && _basket.Count() > _options.maxGridOrderCount)
+                    {
+                        if (_options.basketMaxOrderBehaviour == MAX_ORDER_CLOSE_FIRST_ORDER)
+                        {
+                            _basket.CloseFirstOrder();
+                        }
+                    }
                 }
                 else
                 {
@@ -220,6 +230,13 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
             if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
             {
                 _reporter.ReportTradeOpen(orderType, nextLot);
+                if (_options.maxGridOrderCount != 0 && _basket.Count() > _options.maxGridOrderCount)
+                {
+                    if (_options.basketMaxOrderBehaviour == MAX_ORDER_CLOSE_FIRST_ORDER)
+                    {
+                        _basket.CloseFirstOrder();
+                    }
+                }
             }
             else
             {
