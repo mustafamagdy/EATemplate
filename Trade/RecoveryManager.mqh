@@ -120,7 +120,7 @@ bool CRecoveryManager::CheckHitSL(Trade &firstTrade, double directionFactor, boo
     bool hitSL = false;
     switch (_options.basketSLMode)
     {
-    case SL_MODE_AVERAGE:
+    case MAX_SL_MODE_AVERAGE:
     {
         double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
         double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
@@ -129,12 +129,12 @@ bool CRecoveryManager::CheckHitSL(Trade &firstTrade, double directionFactor, boo
         hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
         break;
     }
-    case SL_MODE_INDIVIDUAL:
+    case MAX_SL_MODE_INDIVIDUAL:
     {
         // should be handled on each order inside the basket
         break;
     }
-    case SL_MODE_GAP_FROM_FIRST:
+    case MAX_SL_MODE_GAP_FROM_FIRST:
     {
         double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _Point;
         _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));

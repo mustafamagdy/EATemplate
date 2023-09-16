@@ -63,15 +63,28 @@ enum ENUM_SIGNAL
     SIGNAL_SELL = 2,
 };
 
-enum ENUM_BASKET_SLTP_MODE
+enum ENUM_BASKET_PNL_TYPE
 {
-    SL_MODE_AVERAGE = 0,
-    SL_MODE_INDIVIDUAL = 1,
-    SL_MODE_GAP_FROM_FIRST = 2,
+    MAX_PNL_CURRENCY_PER_PAIR = 1,  // Currency value per pair
+    MAX_PNL_CURRENCY_ALL_PAIRS = 2, // Currency value for all pairs
+    MAX_PNL_PERCENT_EQUITY = 3,     // Percentage of equity
+};
+
+enum ENUM_BASKET_PNL_RESET_MODE
+{
+    RESET_24_HOURS = 0,      // Reset after 24 hours
+    RESET_AFTER_RESTART = 1, // Reset after restart
+};
+
+enum ENUM_BASKET_MAX_SLTP_MODE
+{
+    MAX_SL_MODE_AVERAGE = 1,        // Weighted Average
+    MAX_SL_MODE_INDIVIDUAL = 2,     // Individual per position
+    MAX_SL_MODE_GAP_FROM_FIRST = 3, // Gap from first position
 };
 
 enum ENUM_BASKET_MAX_ORDER_BEHAVIOUR
 {
-    MAX_ORDER_STOP_ADDING_GRID = 0,
-    MAX_ORDER_CLOSE_FIRST_ORDER = 1,
+    MAX_ORDER_STOP_ADDING_GRID = 0,  // Stop adding new orders
+    MAX_ORDER_CLOSE_FIRST_ORDER = 1, // Close first order and add new order
 };
