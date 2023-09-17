@@ -160,7 +160,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
     if (!hitNextOrderOpen)
         return;
 
-    if ((!isItBuy && bid <= lastTradeSL && ask <= lastOpenPrice) || (isItBuy && ask >= lastTradeSL && bid >= lastOpenPrice))
+    if ((!isItBuy && bid <= lastTradeSL) || (isItBuy && ask >= lastTradeSL))
     {
         _reporter.ReportWarning("Spread is too wide, cannot open any orders now.");
         return;
@@ -367,7 +367,7 @@ double CRecoveryManager::CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direct
 
 double CRecoveryManager::NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction)
 {
-    int basketCount = _basket.Count();
+    int basketCount = _basket.LastOrderCount();
     double lotSize = 0;
     if (_options.recoveryMode == RECOVERY_MARTINGALE)
     {

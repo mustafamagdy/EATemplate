@@ -21,6 +21,7 @@ private:
     string _symbol;
     double _basketAvgTpPrice;
     double _basketAvgSlPrice;
+    int lastOrderCount;
 
 public:
     CTradingBasket(string symbol, long magicNumber);
@@ -39,6 +40,7 @@ public:
     ENUM_BASKET_STATUS Status();
     bool FirstTrade(Trade &trade);
     bool LastTrade(Trade &trade);
+    int LastOrderCount() { return lastOrderCount; }
 
 public:
     void SetBasketAvgTpPrice(double tpPrice);
@@ -55,9 +57,9 @@ public:
     void OnTick();
 
 private:
-    void _UpdateAvgTpForBasketTrades();
-    void _UpdateVirtualSlForBasketTrades();
-    void _UpdateCurrentTrades();
+    void UpdateAvgTpForBasketTrades();
+    void UpdateVirtualSlForBasketTrades();
+    void UpdateCurrentTrades();
 };
 
 CTradingBasket::CTradingBasket(string symbol, long magicNumber)
@@ -76,7 +78,7 @@ CTradingBasket::~CTradingBasket()
 void CTradingBasket::SetBasketAvgTpPrice(double tpPrice)
 {
     _basketAvgTpPrice = tpPrice;
-    CTradingBasket::_UpdateAvgTpForBasketTrades();
+    CTradingBasket::UpdateAvgTpForBasketTrades();
 }
 
 void CTradingBasket::SetBasketSlPrice(double slPrice)
@@ -259,6 +261,7 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
         _trades[ArraySize(_trades) - 1] = trade;
         newTrade = trade;
         _basketStatus = BASKET_OPEN;
+        lastOrderCount++;
     }
     else
     {
@@ -375,7 +378,7 @@ void CTradingBasket::CloseBasketOrders()
     }
 }
 
-void CTradingBasket::_UpdateCurrentTrades()
+void CTradingBasket::UpdateCurrentTrades()
 {
     CPositionInfo _position;
     // Cleanup the basket
@@ -391,6 +394,7 @@ void CTradingBasket::_UpdateCurrentTrades()
     if (ArraySize(_trades) == 0)
     {
         _basketStatus = BASKET_CLOSED;
+        lastOrderCount = 0;
     }
 }
 
@@ -401,12 +405,12 @@ void CTradingBasket::OnTick()
         CTradingBasket::CloseBasketOrders();
     }
 
-    CTradingBasket::_UpdateCurrentTrades();
+    CTradingBasket::UpdateCurrentTrades();
 }
 
 /**********************************************/
 
-void CTradingBasket::_UpdateAvgTpForBasketTrades()
+void CTradingBasket::UpdateAvgTpForBasketTrades()
 {
     if (IsEmpty())
         return;
@@ -423,7 +427,7 @@ void CTradingBasket::_UpdateAvgTpForBasketTrades()
     }
 }
 
-void CTradingBasket::_UpdateVirtualSlForBasketTrades()
+void CTradingBasket::UpdateVirtualSlForBasketTrades()
 {
     if (IsEmpty())
         return;
