@@ -72,10 +72,10 @@ int CSymbolExpert::OnInit()
     _filterManager.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
 
     _buySignalManager = new CSignalManager();
-    _buySignalManager.RegisterSignal(new CBandsSignal(_symbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, true));
+    _buySignalManager.RegisterSignal(new CBandsSignal(_symbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
     //_buySignalManager.RegisterSignal(new CZigZagSignal(_symbol, PERIOD_M15, 12, 5, 3, false));
     _sellSignalManager = new CSignalManager();
-    _sellSignalManager.RegisterSignal(new CBandsSignal(_symbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, true));
+    _sellSignalManager.RegisterSignal(new CBandsSignal(_symbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
     //_sellSignalManager.RegisterSignal(new CZigZagSignal(_symbol, PERIOD_M15, 12, 5, 3, false));
 
     _buyBasket = new CTradingBasket(_symbol, 14324);
