@@ -15,5 +15,5 @@ public:
 
 public:
    virtual bool ValidateInputs() = NULL;
-   virtual bool CanTrade() = NULL;
+   virtual bool GetValue() = NULL;
 };

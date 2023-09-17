@@ -65,9 +65,9 @@ enum ENUM_SIGNAL
 
 enum ENUM_BASKET_PNL_TYPE
 {
-    MAX_PNL_CURRENCY_PER_PAIR = 1,  // Currency value per pair
-    MAX_PNL_CURRENCY_ALL_PAIRS = 2, // Currency value for all pairs
-    MAX_PNL_PERCENT_EQUITY = 3,     // Percentage of equity
+    MAX_PNL_CURRENCY_PER_PAIR = 0,  // Currency value per pair
+    MAX_PNL_CURRENCY_ALL_PAIRS = 1, // Currency value for all pairs
+    MAX_PNL_PERCENT_EQUITY = 2,     // Percentage of equity
 };
 
 enum ENUM_BASKET_PNL_RESET_MODE
@@ -78,9 +78,9 @@ enum ENUM_BASKET_PNL_RESET_MODE
 
 enum ENUM_BASKET_MAX_SLTP_MODE
 {
-    MAX_SL_MODE_AVERAGE = 1,        // Weighted Average
-    MAX_SL_MODE_INDIVIDUAL = 2,     // Individual per position
-    MAX_SL_MODE_GAP_FROM_FIRST = 3, // Gap from first position
+    MAX_SL_MODE_AVERAGE = 0,        // Weighted Average
+    MAX_SL_MODE_INDIVIDUAL = 1,     // Individual per position
+    MAX_SL_MODE_GAP_FROM_FIRST = 2, // Gap from first position
 };
 
 enum ENUM_BASKET_MAX_ORDER_BEHAVIOUR

@@ -1,12 +1,13 @@
 #include "TradingManager.mqh"
 #include "..\UI\Reporter.mqh"
+#include "..\Filters\FilterManager.mqh"
 
 class CNormalTradingManager : public CTradingManager
 {
 
 public:
-    CNormalTradingManager(CTradingBasket *basket, CReporter *reporter)
-        : CTradingManager(basket, reporter)
+    CNormalTradingManager(CTradingBasket *basket, CReporter *reporter, CFilterManager &entryFilters, CFilterManager &exitFilters)
+        : CTradingManager(basket, reporter, entryFilters, exitFilters)
     {
     }
 

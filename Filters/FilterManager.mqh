@@ -25,11 +25,11 @@ public:
         _filters[ArraySize(_filters) - 1] = signal;
     }
 
-    bool CanTradeWithAnd()
+    bool AllAgree()
     {
         for (int i = 0; i < ArraySize(_filters); i++)
         {
-            if (!_filters[i].CanTrade())
+            if (!_filters[i].GetValue())
             {
                 return false;
             }
@@ -38,11 +38,11 @@ public:
         return true;
     }
 
-    bool CanTradeWithOr()
+    bool AnyAgree()
     {
         for (int i = 0; i < ArraySize(_filters); i++)
         {
-            if (_filters[i].CanTrade())
+            if (_filters[i].GetValue())
             {
                 return true;
             }

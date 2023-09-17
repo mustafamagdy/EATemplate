@@ -23,7 +23,7 @@ public:
     }
 
     virtual bool ValidateInputs() { return true; }
-    virtual bool CanTrade()
+    virtual bool GetValue()
     {
         double atrValue = _atr.GetValue(0) / _Point;
         return (_minValue == 0 || atrValue >= _minValue) && (_maxValue == 0 || atrValue <= _maxValue);

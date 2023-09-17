@@ -1,7 +1,8 @@
 #include <Object.mqh>
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
-#include "TradingBasket.mqh";
+#include "TradingBasket.mqh"
+#include "..\Filters\FilterManager.mqh"
 #include "..\Constants.mqh"
 #include "..\UI\Reporter.mqh"
 
@@ -14,15 +15,19 @@ protected:
     CConstants *constants;
     CTradingBasket *_basket;
     CReporter *_reporter;
+    CFilterManager _entryFilters;
+    CFilterManager _exitFilters;
 
     CTrade _trade;
     CPositionInfo _position;
 
 public:
-    CTradingManager(CTradingBasket *basket, CReporter *reporter)
+    CTradingManager(CTradingBasket *basket, CReporter *reporter, CFilterManager &entryFilters, CFilterManager &exitFilters)
     {
         _basket = basket;
         _reporter = reporter;
+        _entryFilters = entryFilters;
+        _exitFilters = exitFilters;
     }
 
 public:
@@ -61,9 +66,18 @@ public:
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice,
                                     string &message, Trade &newTrade, double virtualSLPrice = 0, double virtualTPPrice = 0, string comment = "")
     {
-        bool success = _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPrice, virtualTPPrice, comment);
-        _reporter.ReportTradeOpen(orderType);
-        return success;
+
+        if (_entryFilters.AllAgree())
+        {
+            bool success = _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPrice, virtualTPPrice, comment);
+            _reporter.ReportTradeOpen(orderType);
+            return success;
+        }
+        else
+        {
+            _reporter.ReportWarning("Some filters don\'t agree to open more trades");
+            return (false);
+        }
     }
 
     virtual void OnTick()

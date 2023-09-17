@@ -9,6 +9,7 @@
 #include "..\Signals\SignalManager.mqh";
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh";
 #include "..\UI\Reporter.mqh";
+#include "..\Filters\FilterManager.mqh"
 
 class CRecoveryManager : public CTradingManager
 {
@@ -23,9 +24,10 @@ private:
     double _recoverySLPrice;
 
 public:
-    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CSignalManager *signalManager, CNormalLotSizeCalculator *normalLotCalc,
-                                       CRecoveryLotSizeCalculator *recoveryLotCalc, RecoveryOptions &options)
-        : CTradingManager(basket, reporter)
+    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CSignalManager *signalManager,
+                                       CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
+                                       RecoveryOptions &options, CFilterManager &entryFilters, CFilterManager &exitFilters)
+        : CTradingManager(basket, reporter, entryFilters, exitFilters)
     {
         _options = options;
         _basket = basket;

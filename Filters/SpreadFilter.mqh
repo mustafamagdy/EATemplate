@@ -19,7 +19,7 @@ public:
     }
 
     virtual bool ValidateInputs() { return true; }
-    virtual bool CanTrade()
+    virtual bool GetValue()
     {
         double ask = SymbolInfoDouble(_symbol, SYMBOL_ASK);
         double bid = SymbolInfoDouble(_symbol, SYMBOL_BID);
