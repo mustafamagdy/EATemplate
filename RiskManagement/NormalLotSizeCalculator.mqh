@@ -9,7 +9,7 @@ class CNormalLotSizeCalculator : public CLotSizeCalculator
 private:
    ENUM_RISK_TYPE _riskType;
    double _fixedLot;
-   ENUM_RISK_PERCENTAGE _riskPercentageSource;
+   ENUM_RISK_SOURCE _riskPercentageSource;
    double _riskPercentage;
    double _xBalance;
    double _lotPerXBalance;
@@ -18,7 +18,7 @@ public:
    CNormalLotSizeCalculator(
        ENUM_RISK_TYPE riskType,
        double fixedLot,
-       ENUM_RISK_PERCENTAGE riskPercentageSource,
+       ENUM_RISK_SOURCE riskPercentageSource,
        double riskPercentage,
        double xBalance,
        double lotPerXBalance)

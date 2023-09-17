@@ -13,7 +13,7 @@ enum ENUM_RISK_TYPE
     RISK_TYPE_PER_XBALANCE = 2, // Lots per xBalance
 };
 
-enum ENUM_RISK_PERCENTAGE
+enum ENUM_RISK_SOURCE
 {
     RISK_PERCENTAGE_FROM_BALANCE = 0,         //% of Balance
     RISK_PERCENTAGE_FROM_EQUITY = 1,          //% of Equity

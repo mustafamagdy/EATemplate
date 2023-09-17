@@ -13,6 +13,7 @@ struct RecoveryOptions
     int maxGridOrderCount;
     ENUM_BASKET_MAX_ORDER_BEHAVIOUR basketMaxOrderBehaviour;
     double maxGridLots;
+    double lotMultiplier;
     ENUM_GRID_SIZE_MODE gridSizeMode;
     int gridFixedSize;
     ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode;
@@ -25,4 +26,14 @@ struct RecoveryOptions
     int gridATRMax;
     int recoverySLPoints;
     ENUM_BASKET_MAX_SLTP_MODE basketSLMode;
+};
+
+struct RiskOptions
+{
+    ENUM_RISK_TYPE riskType;
+    double xBalance;
+    double lotPerXBalance;
+    double fixedLot;
+    ENUM_RISK_SOURCE riskSource;
+    double riskPercentage;
 };
