@@ -12,8 +12,7 @@ private:
 
    ENUM_SIGNAL _prevSignal;
 
-private:
-   bool ValidateInputs();
+private:   
    ENUM_SIGNAL CalcSignal();
 
 protected:
@@ -22,8 +21,14 @@ public:
 
 public:
    CBandsSignal(string symbol, ENUM_TIMEFRAMES timeframe, int period, double deviation, ENUM_APPLIED_PRICE appliedPrice, bool reverseSignal = false);
-   ~CBandsSignal() {
+   ~CBandsSignal()
+   {
       delete _indi;
+   }
+   virtual bool ValidateInputs()
+   {
+      // TODO
+      return true;
    }
 };
 
@@ -65,14 +70,9 @@ ENUM_SIGNAL CBandsSignal::CalcSignal()
    }
 }
 
-
-//if(prevSignal == SIGNAL_NUTURAL && signal == SIGNAL_SELL) {
-//DebugBreak();
-//}
-
 ENUM_SIGNAL CBandsSignal::GetSignal(void)
 {
-   
+
    ENUM_SIGNAL signal = CalcSignal();
 
    if (_prevSignal != signal)

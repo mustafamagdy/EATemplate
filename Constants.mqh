@@ -1,5 +1,7 @@
 
-class CConstants
+#include <Object.mqh>
+
+class CConstants : public CObject
 {
 
 public:

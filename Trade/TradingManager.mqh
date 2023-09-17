@@ -39,7 +39,7 @@ public:
         double ask = SymbolInfoDouble(_basket.Symbol(), SYMBOL_ASK);
         double bid = SymbolInfoDouble(_basket.Symbol(), SYMBOL_BID);
         double spread = ask - bid;
-        int spread_points = (int)MathRound(spread / SymbolInfoDouble(_basket.Symbol(), SYMBOL_POINT));
+        int spread_points = (int)MathRound(spread / _Point);
         if (slPoints <= spread_points && virtualSLPoints <= spread_points)
         {
             message = "SL points is less than the spread points";

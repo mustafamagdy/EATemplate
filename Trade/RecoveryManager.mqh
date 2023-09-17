@@ -160,7 +160,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
     if (!hitNextOrderOpen)
         return;
 
-    if ((!isItBuy && bid <= lastTradeSL) || (isItBuy && ask >= lastTradeSL))
+    if ((!isItBuy && bid <= lastTradeSL && ask <= lastOpenPrice) || (isItBuy && ask >= lastTradeSL && bid >= lastOpenPrice))
     {
         _reporter.ReportWarning("Spread is too wide, cannot open any orders now.");
         return;
@@ -264,7 +264,7 @@ bool CRecoveryManager::OpenTradeWithPoints(double volume, double price, ENUM_ORD
     double ask = SymbolInfoDouble(_basket.Symbol(), SYMBOL_ASK);
     double bid = SymbolInfoDouble(_basket.Symbol(), SYMBOL_BID);
     double spread = ask - bid;
-    int spread_points = (int)MathRound(spread / SymbolInfoDouble(_basket.Symbol(), SYMBOL_POINT));
+    int spread_points = (int)MathRound(spread / _Point);
     if (slPoints <= spread_points)
     {
         message = "SL points is less than the spread points";

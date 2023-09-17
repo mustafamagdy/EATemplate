@@ -211,7 +211,7 @@ bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER
     double ask = SymbolInfoDouble(_symbol, SYMBOL_ASK);
     double bid = SymbolInfoDouble(_symbol, SYMBOL_BID);
     double spread = ask - bid;
-    int spread_points = (int)MathRound(spread / SymbolInfoDouble(_symbol, SYMBOL_POINT));
+    int spread_points = (int)MathRound(spread / _Point);
     if (slPoints <= spread_points)
     {
         message = "SL points is less than the spread points";

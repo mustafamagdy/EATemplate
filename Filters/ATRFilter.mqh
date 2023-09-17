@@ -22,7 +22,12 @@ public:
         delete _atr;
     }
 
-    virtual bool ValidateInputs() { return true; }
+    virtual bool ValidateInputs()
+    {
+        // TODO
+        return true;
+    }
+
     virtual bool GetValue()
     {
         double atrValue = _atr.GetValue(0) / _Point;

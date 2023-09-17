@@ -1,9 +1,10 @@
+#include <Object.mqh>
 #include "..\Enums.mqh"
 #include "FilterBase.mqh"
 
 #property strict
 
-class CFilterManager
+class CFilterManager : public CObject
 {
     CFilterBase *_filters[];
 
@@ -17,6 +18,18 @@ public:
     ~CFilterManager()
     {
         ArrayFree(_filters);
+    }
+
+    bool ValidateFilters()
+    {
+        for (int i = 0; i < ArraySize(_filters); i++)
+        {
+            if (!_filters[i].ValidateInputs())
+            {
+                return (false);
+            }
+        }
+        return (true);
     }
 
     void RegisterSignal(CFilterBase *signal)

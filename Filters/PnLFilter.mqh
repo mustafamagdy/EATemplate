@@ -31,7 +31,12 @@ public:
     {
     }
 
-    virtual bool ValidateInputs() { return true; }
+    virtual bool ValidateInputs()
+    {
+        // TODO
+        return true;
+    }
+    
     virtual bool GetValue()
     {
         double profit = _basket.Profit();

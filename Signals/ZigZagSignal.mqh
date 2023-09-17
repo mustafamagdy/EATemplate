@@ -13,7 +13,6 @@ private:
    ENUM_SIGNAL _prevSignal;
 
 private:
-   bool ValidateInputs();
    ENUM_SIGNAL CalcSignal();
    int GetPreviousZigZagBar(int bar, double zValue);
 
@@ -26,6 +25,11 @@ public:
    ~CZigZagSignal()
    {
       delete _indi;
+   }
+   virtual bool ValidateInputs()
+   {
+      // TODO
+      return true;
    }
 };
 
@@ -93,10 +97,4 @@ int CZigZagSignal::GetPreviousZigZagBar(int bar, double zValue)
       }
 
       return SIGNAL_NUTURAL;
-   }
-
-   bool CZigZagSignal::ValidateInputs()
-   {
-      // You'll need to implement this method to validate the inputs based on your requirements
-      return true;
    }
