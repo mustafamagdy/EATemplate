@@ -227,6 +227,8 @@ private:
     }
 
 public:
+    FirstEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints, RecoveryOptions &options, RiskOptions &riskOptions)
+        :CSymbolExpert(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions) {}
     void RegisterFilters(CFilterManager &filterManager) {
         if(!Check()) return;
     }
