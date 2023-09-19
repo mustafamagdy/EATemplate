@@ -20,13 +20,13 @@ class CSymbolExpert : public CObject
 {
 
 protected:
-    bool _onInitCalled = false;
+    bool _onInitCalled;
 
 private:
     CConstants *_constants;
     CTradingBasket *_buyBasket;
     CTradingBasket *_sellBasket;
-    CReporter *_reporter;
+    
     CNormalLotSizeCalculator *_normalLotCalc;
     CLotSizeCalculator *_lotCalc;
     CTradingManager *buyRecovery;
@@ -41,10 +41,13 @@ private:
     int _maxSpread;
     int _defaultSLPoints;
     int _defaultTPPoints;
-    string _symbol;
+    
     RecoveryOptions _recoveryOptions;
     RiskOptions _riskOptions;
 
+protected:
+   CReporter *_reporter;
+   string _symbol;   
 public:
     CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints, RecoveryOptions &options, RiskOptions &riskOptions);
     ~CSymbolExpert();
@@ -64,6 +67,7 @@ public:
 
 CSymbolExpert::CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints, RecoveryOptions &options, RiskOptions &riskOptions)
 {
+   _onInitCalled = false;
     _symbol = symbol;
     _maxSpread = maxSpread;
     _defaultSLPoints = defaultSLPoints;
@@ -92,11 +96,11 @@ int CSymbolExpert::OnInit()
     // Entry filters
     _entryFiltersForBuys = new CFilterManager();
     _entryFiltersForBuys.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
-    RegisterEntryFiltersForBuys(_entryFiltersForBuys)
+    RegisterEntryFiltersForBuys(_entryFiltersForBuys);
     
     _entryFiltersForSells = new CFilterManager();
     _entryFiltersForSells.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
-    RegisterEntryFiltersForSells(_entryFiltersForSells)
+    RegisterEntryFiltersForSells(_entryFiltersForSells);
    
     // Exit filters
     _exitFiltersForBuys = new CFilterManager();
