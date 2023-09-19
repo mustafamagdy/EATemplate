@@ -18,12 +18,13 @@ private:
     Trade _trades[];
     ENUM_BASKET_STATUS _basketStatus;
     long _magicNumber;
-    string _symbol;
-    double _basketAvgTpPrice;
-    double _basketAvgSlPrice;
+    string pSymbol;
+    double basketAvgTpPrice;
+    double basketAvgSlPrice;
     int lastOrderCount;
     double firstOrderVolume;
-    
+    double profit;
+
 public:
     CTradingBasket(string symbol, long magicNumber);
     ~CTradingBasket();
@@ -33,7 +34,8 @@ public:
     double Volume(ENUM_ORDER_TYPE orderType);
     long MagicNumber() { return _magicNumber; }
     double AverageOpenPrice();
-    double Profit();
+    double Profit() { return profit; }
+    void ResetPnL() { profit = 0; }
     int Count();
     string Symbol();
     bool HasOpenedTrades();
@@ -66,7 +68,7 @@ private:
 
 CTradingBasket::CTradingBasket(string symbol, long magicNumber)
 {
-    _symbol = symbol;
+    pSymbol = symbol;
     _magicNumber = magicNumber;
     _basketStatus = BASKET_CLOSED;
     ArrayResize(_trades, 0);
@@ -79,7 +81,7 @@ CTradingBasket::~CTradingBasket()
 
 void CTradingBasket::SetBasketAvgTpPrice(double tpPrice)
 {
-    _basketAvgTpPrice = tpPrice;
+    basketAvgTpPrice = tpPrice;
     CTradingBasket::UpdateAvgTpForBasketTrades();
 }
 
@@ -129,6 +131,7 @@ void CTradingBasket::CloseFirstOrder()
             if (_trade.PositionClose(ticket, ULONG_MAX))
             {
                 ArrayRemove(_trades, 0, 1);
+                // Do we need to update profit?
             }
             else
             {
@@ -155,11 +158,11 @@ bool CTradingBasket::UpdateSLTP(int recoverySLPoints, double tpPrice)
             double slPrice = 0;
             if (_position.PositionType() == POSITION_TYPE_BUY)
             {
-                slPrice = recoverySLPoints == 0 ? 0 : avgOpenPrice - (recoverySLPoints * SymbolInfoDouble(_symbol, SYMBOL_POINT));
+                slPrice = recoverySLPoints == 0 ? 0 : avgOpenPrice - (recoverySLPoints * SymbolInfoDouble(pSymbol, SYMBOL_POINT));
             }
             else if (_position.PositionType() == POSITION_TYPE_SELL)
             {
-                slPrice = recoverySLPoints == 0 ? 0 : avgOpenPrice + (recoverySLPoints * SymbolInfoDouble(_symbol, SYMBOL_POINT));
+                slPrice = recoverySLPoints == 0 ? 0 : avgOpenPrice + (recoverySLPoints * SymbolInfoDouble(pSymbol, SYMBOL_POINT));
             }
 
             if (!_trade.PositionModify(ticket, slPrice, tpPrice))
@@ -212,8 +215,8 @@ void CTradingBasket::SwitchTradeToVirtualSLTP(ulong ticket)
 bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string &message, Trade &newTrade, int virtualSLPoints, int virtualTPPoints, string comment)
 {
     double slPrice = 0, tpPrice = 0;
-    double ask = SymbolInfoDouble(_symbol, SYMBOL_ASK);
-    double bid = SymbolInfoDouble(_symbol, SYMBOL_BID);
+    double ask = SymbolInfoDouble(pSymbol, SYMBOL_ASK);
+    double bid = SymbolInfoDouble(pSymbol, SYMBOL_BID);
     double spread = ask - bid;
     int spread_points = (int)MathRound(spread / _Point);
     if (slPoints <= spread_points)
@@ -239,10 +242,11 @@ bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER
 bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice,
                                         string &message, Trade &newTrade, double virtualSLPrice, double virtualTPPrice, string comment)
 {
-   if(Count() == 0) {
-      firstOrderVolume = volume;
-   }
-   
+    if (Count() == 0)
+    {
+        firstOrderVolume = volume;
+    }
+
     if (_basketStatus == BASKET_CLOSING)
     {
         // TODO: error reporting
@@ -253,7 +257,7 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
     MqlTradeResult result;
     CTrade _trade;
     _trade.SetExpertMagicNumber(_magicNumber);
-    _trade.PositionOpen(_symbol, orderType, volume, price, slPrice, tpPrice, comment);
+    _trade.PositionOpen(pSymbol, orderType, volume, price, slPrice, tpPrice, comment);
     _trade.Result(result);
 
     if (result.retcode > 0)
@@ -316,23 +320,8 @@ double CTradingBasket::AverageOpenPrice()
     return avgPrice;
 }
 
-double CTradingBasket::Profit()
-{
-    CPositionInfo _position;
-    double totalProfit = 0.0;
-    for (int i = Count() - 1; i >= 0; i--)
-    {
-        ulong ticket = _trades[i].Ticket();
-        if (_position.SelectByTicket(ticket))
-        {
-            totalProfit += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
-        }
-    }
-    return totalProfit;
-}
-
 int CTradingBasket::Count() { return ArraySize(_trades); }
-string CTradingBasket::Symbol() { return _symbol; }
+string CTradingBasket::Symbol() { return pSymbol; }
 bool CTradingBasket::HasOpenedTrades() { return Count() > 0; }
 bool CTradingBasket::IsEmpty() { return Count() == 0; }
 ENUM_BASKET_STATUS CTradingBasket::Status() { return _basketStatus; }
@@ -395,6 +384,10 @@ void CTradingBasket::UpdateCurrentTrades()
         {
             ArrayRemove(_trades, i, 1);
         }
+        else
+        {
+            profit += PositionGetDouble(POSITION_PROFIT) + PositionGetDouble(POSITION_SWAP);
+        }
     }
 
     if (ArraySize(_trades) == 0)
@@ -428,7 +421,7 @@ void CTradingBasket::UpdateAvgTpForBasketTrades()
         ulong ticket = _trades[i].Ticket();
         if (_position.SelectByTicket(ticket))
         {
-            _trade.PositionModify(ticket, _position.StopLoss(), _basketAvgTpPrice);
+            _trade.PositionModify(ticket, _position.StopLoss(), basketAvgTpPrice);
         }
     }
 }
