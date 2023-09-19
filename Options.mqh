@@ -13,10 +13,14 @@ struct RecoveryOptions
     int maxGridOrderCount;
     ENUM_BASKET_MAX_ORDER_BEHAVIOUR basketMaxOrderBehaviour;
     double maxGridLots;
+    ENUM_RECOVERY_LOT_SIZE_MODE lotMode;
     double lotMultiplier;
     ENUM_GRID_SIZE_MODE gridSizeMode;
+    double fixedLot;
+    string lotSeries;
     int gridFixedSize;
     ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode;
+    ENUM_RECOVERY_FIXED_CUSTOM_MODE lotCustomMode;
     string gridCustomSeries;
     int gridATRPeriod;
     ENUM_TIMEFRAMES gridATRTimeframe;
