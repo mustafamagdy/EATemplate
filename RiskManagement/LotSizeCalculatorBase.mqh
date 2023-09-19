@@ -21,9 +21,9 @@ public:
    ~CLotSizeCalculator(){};
 
 public:
-   virtual double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1) = NULL;
-   virtual double CalculateLotSize(string symbol, const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType = -1) = NULL;
-   virtual double CalculateLotSize(string symbol, const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType = -1) = NULL;
+   virtual double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1) = 0;
+   virtual double CalculateLotSize(string symbol, const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType = -1) = 0;
+   virtual double CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType = -1) = 0;
 
    double NormalizeLot(string symbol, double lots);
 };
@@ -74,9 +74,8 @@ double CLotSizeCalculator::NormalizeLot(string symbol, double lots)
       NormalizedLot = MinLot; // Broker's absolute minimum Lot
    if (NormalizedLot > MaxLot)
       NormalizedLot = MaxLot; // Broker's absolute maximum Lot
-
-   // constants.LogVerbose(__FUNCTION__, StringFormat( "normalized lot %f", NormalizedLot));
-   return NormalizeDouble(NormalizedLot, (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS));
+      
+   return NormalizeDouble(NormalizedLot, 2);
 }
 
 double CLotSizeCalculator::MaxLotForMarginAvailable(string symbol)

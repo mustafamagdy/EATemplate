@@ -19,14 +19,11 @@
 class CSymbolExpert : public CObject
 {
 
-protected:
-    bool _onInitCalled;
-
 private:
     CConstants *_constants;
     CTradingBasket *_buyBasket;
     CTradingBasket *_sellBasket;
-    
+
     CNormalLotSizeCalculator *_normalLotCalc;
     CLotSizeCalculator *_lotCalc;
     CTradingManager *buyRecovery;
@@ -41,25 +38,26 @@ private:
     int _maxSpread;
     int _defaultSLPoints;
     int _defaultTPPoints;
-    
+
     RecoveryOptions _recoveryOptions;
     RiskOptions _riskOptions;
 
 protected:
-   CReporter *_reporter;
-   string _symbol;   
+    CReporter *_reporter;
+    string pSymbol;
+
 public:
     CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints, RecoveryOptions &options, RiskOptions &riskOptions);
     ~CSymbolExpert();
 
 public:
-    virtual void RegisterFilters(CFilterManager &filterManager) = NULL;
-    virtual void RegisterBuySignals(CSignalManager &signalManager) = NULL;
-    virtual void RegisterSellSignals(CSignalManager &signalManager) = NULL;
-    virtual void RegisterEntryFiltersForBuys(CFilterManager &entryFilters) = NULL;
-    virtual void RegisterEntryFiltersForSells(CFilterManager &entryFilters) = NULL;
-    virtual void RegisterExitFiltersForBuys(CFilterManager &entryFilters) = NULL;
-    virtual void RegisterExitFiltersForSells(CFilterManager &entryFilters) = NULL;
+    virtual void RegisterFilters(CFilterManager *filterManager) = 0;
+    virtual void RegisterBuySignals(CSignalManager *signalManager) = 0;
+    virtual void RegisterSellSignals(CSignalManager *signalManager) = 0;
+    virtual void RegisterEntryFiltersForBuys(CFilterManager *entryFilters) = 0;
+    virtual void RegisterEntryFiltersForSells(CFilterManager *entryFilters) = 0;
+    virtual void RegisterExitFiltersForBuys(CFilterManager *entryFilters) = 0;
+    virtual void RegisterExitFiltersForSells(CFilterManager *entryFilters) = 0;
     int OnInit();
     bool ValidateInputs();
     void OnTick();
@@ -67,8 +65,7 @@ public:
 
 CSymbolExpert::CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints, RecoveryOptions &options, RiskOptions &riskOptions)
 {
-   _onInitCalled = false;
-    _symbol = symbol;
+    pSymbol = symbol;
     _maxSpread = maxSpread;
     _defaultSLPoints = defaultSLPoints;
     _defaultTPPoints = defaultTPPoints;
@@ -81,37 +78,37 @@ int CSymbolExpert::OnInit()
     _reporter = new CReporter();
     _constants = new CConstants();
 
-    _filterManager = new CFilterManager();        
+    _filterManager = new CFilterManager();
     RegisterFilters(_filterManager);
 
     _buySignalManager = new CSignalManager();
     RegisterBuySignals(_buySignalManager);
-    
-    _sellSignalManager = new CSignalManager();
-    RegisterSellSignals(_sellSignalManager);   
 
-    _buyBasket = new CTradingBasket(_symbol, 14324);
-    _sellBasket = new CTradingBasket(_symbol, 45332);
+    _sellSignalManager = new CSignalManager();
+    RegisterSellSignals(_sellSignalManager);
+
+    _buyBasket = new CTradingBasket(pSymbol, 14324);
+    _sellBasket = new CTradingBasket(pSymbol, 45332);
 
     // Entry filters
     _entryFiltersForBuys = new CFilterManager();
-    _entryFiltersForBuys.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
+    _entryFiltersForBuys.RegisterSignal(new CSpreadFilter(pSymbol, _maxSpread));
     RegisterEntryFiltersForBuys(_entryFiltersForBuys);
-    
+
     _entryFiltersForSells = new CFilterManager();
-    _entryFiltersForSells.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
+    _entryFiltersForSells.RegisterSignal(new CSpreadFilter(pSymbol, _maxSpread));
     RegisterEntryFiltersForSells(_entryFiltersForSells);
-   
+
     // Exit filters
     _exitFiltersForBuys = new CFilterManager();
     RegisterExitFiltersForBuys(_exitFiltersForBuys);
     _exitFiltersForSells = new CFilterManager();
     RegisterExitFiltersForSells(_exitFiltersForSells);
 
-    _normalLotCalc = new CNormalLotSizeCalculator(_riskOptions.riskType, _riskOptions.fixedLot, _riskOptions.riskSource, _riskOptions.riskPercentage, 
-                                                _riskOptions.xBalance, _riskOptions.lotPerXBalance);    
-    _lotCalc = new CRecoveryLotSizeCalculator(_normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.lotSeries,
-                                                _recoveryOptions.lotMultiplier, _recoveryOptions.lotCustomMode);
+    _normalLotCalc = new CNormalLotSizeCalculator(_riskOptions.riskType, _riskOptions.fixedLot, _riskOptions.riskSource, _riskOptions.riskPercentage,
+                                                  _riskOptions.xBalance, _riskOptions.lotPerXBalance);
+    _lotCalc = new CRecoveryLotSizeCalculator(_normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.gridLotSeries,
+                                              _recoveryOptions.lotMultiplier, _recoveryOptions.lotCustomMode);
 
     buyRecovery = new CRecoveryManager(_buyBasket, _reporter, _buySignalManager, _normalLotCalc, _lotCalc, _recoveryOptions, _entryFiltersForBuys, _exitFiltersForBuys);
     sellRecovery = new CRecoveryManager(_sellBasket, _reporter, _sellSignalManager, _normalLotCalc, _lotCalc, _recoveryOptions, _entryFiltersForSells, _exitFiltersForSells);
@@ -121,7 +118,6 @@ int CSymbolExpert::OnInit()
         return (INIT_PARAMETERS_INCORRECT);
     }
 
-    _onInitCalled = true;
     return INIT_SUCCEEDED;
 }
 
@@ -157,8 +153,8 @@ void CSymbolExpert::OnTick()
     buyRecovery.OnTick();
     sellRecovery.OnTick();
 
-    double ask = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
-    double bid = SymbolInfoDouble(_Symbol, SYMBOL_BID);
+    double ask = SymbolInfoDouble(pSymbol, SYMBOL_ASK);
+    double bid = SymbolInfoDouble(pSymbol, SYMBOL_BID);
     bool sellSignal = _sellSignalManager.GetSignalWithAnd(SIGNAL_SELL);
     bool buySignal = _buySignalManager.GetSignalWithAnd(SIGNAL_BUY);
 
@@ -176,7 +172,7 @@ void CSymbolExpert::OnTick()
         double price = ask;
 
         double slPrice = price + (slPoints * _Point);
-        double lots = _lotCalc.CalculateLotSize(_Symbol, price, slPrice, direction);
+        double lots = _lotCalc.CalculateLotSize(pSymbol, price, slPrice, direction);
         string message;
         Trade trade;
         if (!buyRecovery.OpenTradeWithPoints(lots, price, direction, 0, 0, message, trade, slPoints, tpPoints, "test buy"))
@@ -191,7 +187,7 @@ void CSymbolExpert::OnTick()
         double price = bid;
 
         double slPrice = price + (slPoints * _Point);
-        double lots = _lotCalc.CalculateLotSize(_Symbol, price, slPrice, direction);
+        double lots = _lotCalc.CalculateLotSize(pSymbol, price, slPrice, direction);
         string message;
         Trade trade;
         if (!sellRecovery.OpenTradeWithPoints(lots, price, direction, 0, 0, message, trade, slPoints, tpPoints, "test sell"))
@@ -216,49 +212,41 @@ void CSymbolExpert::~CSymbolExpert()
     SafeDeletePointer(_filterManager);
 }
 
-
-class FirstEA: public CSymbolExpert 
+class FirstEA : public CSymbolExpert
 {
-
-private:
-    bool Check() {
-        if(!_onInitCalled) {
-            _reporter.ReportError("On init has not been called, or it failed during input validation");
-            return (false);
-        }
-
-        return (true);
-    }
 
 public:
     FirstEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints, RecoveryOptions &options, RiskOptions &riskOptions)
-        :CSymbolExpert(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions) {}
-    void RegisterFilters(CFilterManager &filterManager) {
-        if(!Check()) return;
-    }
-    void RegisterBuySignals(CSignalManager &signalManager) {
-        if(!Check()) return;
-        signalManager.RegisterSignal(new CBandsSignal(_symbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
-    }
-    void RegisterSellSignals(CSignalManager &signalManager) {
-        if(!Check()) return;
-        signalManager.RegisterSignal(new CBandsSignal(_symbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
-    }
-    void RegisterEntryFiltersForBuys(CFilterManager &entryFilters) {
-        if(!Check()) return;
+        : CSymbolExpert(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions) {}
 
-    }
-    void RegisterEntryFiltersForSells(CFilterManager &entryFilters) {
-        if(!Check()) return;
-
-    }
-    void RegisterExitFiltersForBuys(CFilterManager &entryFilters) {
-        if(!Check()) return;
-
-    }
-    void RegisterExitFiltersForSells(CFilterManager &entryFilters) {
-        if(!Check()) return;
-
+protected:
+    void RegisterFilters(CFilterManager *filterManager)
+    {
     }
 
+    void RegisterBuySignals(CSignalManager *signalManager)
+    {
+        signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
+    }
+
+    void RegisterSellSignals(CSignalManager *signalManager)
+    {
+        signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
+    }
+
+    void RegisterEntryFiltersForBuys(CFilterManager *entryFilters)
+    {
+    }
+
+    void RegisterEntryFiltersForSells(CFilterManager *entryFilters)
+    {
+    }
+
+    void RegisterExitFiltersForBuys(CFilterManager *entryFilters)
+    {
+    }
+
+    void RegisterExitFiltersForSells(CFilterManager *entryFilters)
+    {
+    }
 };

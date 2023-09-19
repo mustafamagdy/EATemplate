@@ -34,7 +34,7 @@ public:
         _signalManager = signalManager;
         _normalLotCalc = normalLotCalc;
         _recoveryLotCalc = recoveryLotCalc;
-        _gridGapCalc = new CGridGapCalculator(_basket.Symbol(), options.gridSizeMode, options.gridFixedSize, options.gridCustomSizeMode, options.gridCustomSeries,
+        _gridGapCalc = new CGridGapCalculator(_basket.Symbol(), options.gridSizeMode, options.gridFixedSize, options.gridCustomSizeMode, options.gridGapCustomSeries,
                                               options.gridATRPeriod, options.newBarTimeframe, options.gridATRValueAction, options.gridATRActionValue, options.gridATRMin, options.gridATRMax);
     }
 
@@ -48,7 +48,7 @@ private:
     bool CheckHitSL(Trade &firstTrade, double directionFactor, bool isItBuy, double bid, double ask);
     void HandleNextOrderOpen(Trade &lastTrade, string &symbol, double ask, double bid, bool isItBuy);
     void CleanUp();
-    double NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction);
+    double NextLotSize(string symbol, int slPoints, double lastLot, double firstLot, ENUM_ORDER_TYPE direction);
     double CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction);
     double CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direction);
     void DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style);
@@ -153,6 +153,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
     double lastOpenPrice = lastTrade.OpenPrice();
     double firstTradeTp = lastTrade.TakeProfit();
     double lastLot = lastTrade.Volume();
+    double firstLot = _basket.FirstOrderVolume();
     double lastTradeSL = lastTrade.VirtualStopLoss();
 
     bool hitNextOrderOpen = isItBuy ? bid <= lastTradeSL : ask >= lastTradeSL;
@@ -206,7 +207,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
 
             if (hasSignal)
             {
-                double nextLot = NextLotSize(symbol, nextGridGap, lastLot, orderType);
+                double nextLot = NextLotSize(symbol, nextGridGap, lastLot, firstLot, orderType);
                 if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
                 {
                     _reporter.ReportTradeOpen(orderType, nextLot);
@@ -228,7 +229,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
         {
             double nextSLPrice = ask + NormalizeDouble(nextGridGap * _Point, _Digits);
             ENUM_ORDER_TYPE newOrderType = orderType == ORDER_TYPE_BUY ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
-            double nextLot = NextLotSize(symbol, nextGridGap, lastLot, newOrderType);
+            double nextLot = NextLotSize(symbol, nextGridGap, lastLot, firstLot, newOrderType);
             if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
             {
                 _reporter.ReportTradeOpen(orderType, nextLot);
@@ -365,15 +366,15 @@ double CRecoveryManager::CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direct
     return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? -1 : 1) * _options.recoverySLPoints * _Point), _Digits);
 }
 
-double CRecoveryManager::NextLotSize(string symbol, int slPoints, double lastLot, ENUM_ORDER_TYPE direction)
+double CRecoveryManager::NextLotSize(string symbol, int slPoints, double lastLot, double firstLot, ENUM_ORDER_TYPE direction)
 {
     int basketCount = _basket.LastOrderCount();
     double lotSize = 0;
     if (_options.recoveryMode == RECOVERY_MARTINGALE)
     {
         lotSize = _basket.IsEmpty()
-                      ? _normalLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction)
-                      : _recoveryLotCalc.CalculateLotSize(symbol, slPoints, lastLot, basketCount, direction);
+                      ? _normalLotCalc.CalculateLotSize(symbol, slPoints, lastLot, firstLot, basketCount, direction)
+                      : _recoveryLotCalc.CalculateLotSize(symbol, slPoints, lastLot, firstLot, basketCount, direction);
     }
     else if (_options.recoveryMode == RECOVERY_HEDGING)
     {

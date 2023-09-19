@@ -15,13 +15,13 @@ struct RecoveryOptions
     double maxGridLots;
     ENUM_RECOVERY_LOT_SIZE_MODE lotMode;
     double lotMultiplier;
-    ENUM_GRID_SIZE_MODE gridSizeMode;
     double fixedLot;
-    string lotSeries;
+    string gridLotSeries;
+    ENUM_RECOVERY_FIXED_CUSTOM_MODE lotCustomMode;
+    ENUM_GRID_SIZE_MODE gridSizeMode;
     int gridFixedSize;
     ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode;
-    ENUM_RECOVERY_FIXED_CUSTOM_MODE lotCustomMode;
-    string gridCustomSeries;
+    string gridGapCustomSeries;
     int gridATRPeriod;
     ENUM_TIMEFRAMES gridATRTimeframe;
     ENUM_VALUE_ACTION gridATRValueAction;

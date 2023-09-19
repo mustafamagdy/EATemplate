@@ -37,9 +37,10 @@ enum ENUM_RECOVERY_LOT_SIZE_MODE
 
 enum ENUM_RECOVERY_FIXED_CUSTOM_MODE
 {
-    RECOVERY_LOT_CUSTOM_SERIES = 0,     // Custom Series
-    RECOVERY_LOT_CUSTOM_ROLLING = 1,    // Custom Series (Restart when finished)
-    RECOVERY_LOT_CUSTOM_MULTIPLIER = 2, // Custom Multiplier series
+    RECOVERY_LOT_CUSTOM_SERIES = 0,                   // Custom Series
+    RECOVERY_LOT_CUSTOM_ROLLING = 1,                  // Custom Series (Restart when finished)
+    RECOVERY_LOT_CUSTOM_MULTIPLIER = 2,               // Custom Multiplier series
+    RECOVERY_LOT_CUSTOM_MULTIPLIER_FROM_ORIGINAL = 3, // Custom Multiplier series from original
 };
 
 enum ENUM_GRID_SIZE_MODE

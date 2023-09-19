@@ -22,7 +22,8 @@ private:
     double _basketAvgTpPrice;
     double _basketAvgSlPrice;
     int lastOrderCount;
-
+    double firstOrderVolume;
+    
 public:
     CTradingBasket(string symbol, long magicNumber);
     ~CTradingBasket();
@@ -41,6 +42,7 @@ public:
     bool FirstTrade(Trade &trade);
     bool LastTrade(Trade &trade);
     int LastOrderCount() { return lastOrderCount; }
+    double FirstOrderVolume() { return firstOrderVolume; }
 
 public:
     void SetBasketAvgTpPrice(double tpPrice);
@@ -237,6 +239,10 @@ bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER
 bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice,
                                         string &message, Trade &newTrade, double virtualSLPrice, double virtualTPPrice, string comment)
 {
+   if(Count() == 0) {
+      firstOrderVolume = volume;
+   }
+   
     if (_basketStatus == BASKET_CLOSING)
     {
         // TODO: error reporting

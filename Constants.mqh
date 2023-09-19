@@ -5,7 +5,7 @@ class CConstants : public CObject
 {
 
 public:
-    static const string Separator() { return ";"; }
+    static const string Separator() { return ","; }
 
     static const double AccountEquity() { return AccountInfoDouble(ACCOUNT_EQUITY); }
     static const double AccountFreeMargin() { return AccountInfoDouble(ACCOUNT_MARGIN_FREE); }

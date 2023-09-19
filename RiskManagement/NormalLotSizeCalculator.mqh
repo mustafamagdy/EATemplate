@@ -36,7 +36,7 @@ public:
 public:
    double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1);
    double CalculateLotSize(string symbol, const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType = -1);
-   double CalculateLotSize(string symbol, const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType);
+   double CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType);
 };
 
 double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1)
@@ -86,7 +86,7 @@ double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const double op
    return CalculateLotSize(symbol, points, orderType);
 }
 
-double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, double lastLot, int orderCount, const ENUM_ORDER_TYPE orderType)
+double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType)
 {
    return CalculateLotSize(symbol, riskPoints, 0, 0, orderType);
 }
