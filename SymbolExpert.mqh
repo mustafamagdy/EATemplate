@@ -34,10 +34,10 @@ private:
     CSignalManager *_buySignalManager;
     CSignalManager *_sellSignalManager;
     CFilterManager *_filterManager;
-    CFilterManager *pEntryFiltersForBuys;
-    CFilterManager *pExitFiltersForBuys;
-    CFilterManager *pEntryFiltersForSells;
-    CFilterManager *pExitFiltersForSells;
+    CFilterManager *_entryFiltersForBuys;
+    CFilterManager *_exitFiltersForBuys;
+    CFilterManager *_entryFiltersForSells;
+    CFilterManager *_exitFiltersForSells;
     int _maxSpread;
     int _defaultSLPoints;
     int _defaultTPPoints;
@@ -90,27 +90,27 @@ int CSymbolExpert::OnInit()
     _sellBasket = new CTradingBasket(_symbol, 45332);
 
     // Entry filters
-    pEntryFiltersForBuys = new CFilterManager();
-    pEntryFiltersForBuys.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
-    RegisterEntryFiltersForBuys(pEntryFiltersForBuys)
+    _entryFiltersForBuys = new CFilterManager();
+    _entryFiltersForBuys.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
+    RegisterEntryFiltersForBuys(_entryFiltersForBuys)
     
-    pEntryFiltersForSells = new CFilterManager();
-    pEntryFiltersForSells.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
-    RegisterEntryFiltersForSells(pEntryFiltersForSells)
+    _entryFiltersForSells = new CFilterManager();
+    _entryFiltersForSells.RegisterSignal(new CSpreadFilter(_symbol, _maxSpread));
+    RegisterEntryFiltersForSells(_entryFiltersForSells)
    
     // Exit filters
-    pExitFiltersForBuys = new CFilterManager();
-    RegisterExitFiltersForBuys(pExitFiltersForBuys);
-    pExitFiltersForSells = new CFilterManager();
-    RegisterExitFiltersForSells(pExitFiltersForSells);
+    _exitFiltersForBuys = new CFilterManager();
+    RegisterExitFiltersForBuys(_exitFiltersForBuys);
+    _exitFiltersForSells = new CFilterManager();
+    RegisterExitFiltersForSells(_exitFiltersForSells);
 
     _normalLotCalc = new CNormalLotSizeCalculator(_riskOptions.riskType, _riskOptions.fixedLot, _riskOptions.riskSource, _riskOptions.riskPercentage, 
                                                 _riskOptions.xBalance, _riskOptions.lotPerXBalance);    
     _lotCalc = new CRecoveryLotSizeCalculator(_normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.lotSeries,
                                                 _recoveryOptions.lotMultiplier, _recoveryOptions.lotCustomMode);
 
-    buyRecovery = new CRecoveryManager(_buyBasket, _reporter, _buySignalManager, _normalLotCalc, _lotCalc, _recoveryOptions, pEntryFiltersForBuys, pExitFiltersForBuys);
-    sellRecovery = new CRecoveryManager(_sellBasket, _reporter, _sellSignalManager, _normalLotCalc, _lotCalc, _recoveryOptions, pEntryFiltersForSells, pExitFiltersForSells);
+    buyRecovery = new CRecoveryManager(_buyBasket, _reporter, _buySignalManager, _normalLotCalc, _lotCalc, _recoveryOptions, _entryFiltersForBuys, _exitFiltersForBuys);
+    sellRecovery = new CRecoveryManager(_sellBasket, _reporter, _sellSignalManager, _normalLotCalc, _lotCalc, _recoveryOptions, _entryFiltersForSells, _exitFiltersForSells);
 
     if (!ValidateInputs())
     {
