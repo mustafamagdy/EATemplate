@@ -373,12 +373,14 @@ void CTradingBasket::CloseBasketOrders()
     if (IsEmpty())
     {
         _basketStatus = BASKET_CLOSED;
+        profit = 0;
     }
 }
 
 void CTradingBasket::UpdateCurrentTrades()
 {
     CPositionInfo _position;
+    profit = 0;
     // Cleanup the basket
     for (int i = Count() - 1; i >= 0; i--)
     {

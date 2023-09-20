@@ -76,7 +76,7 @@ class CTradingStatusManager : public CObject
 {
 private:
     CReporter *_reporter;
-    CTradingStatus *_rules[];
+    CTradingStatus _rules[];
 
 private:
     bool FindAccountRule(CTradingStatus &status);
@@ -85,6 +85,11 @@ private:
     void EvaluateRule(CTradingStatus &status, string symbol, datetime time, ENUM_ORDER_TYPE basketType = NULL);
 
 public:
+    CTradingStatusManager(CReporter *reproter) {
+        ArrayResize(_rules, 0);
+        _reporter = reproter;
+    }
+
     void OnTick(string symbol, datetime time, ENUM_ORDER_TYPE basketType = NULL);
     int AddNewRule(CTradingStatus &rule);
     bool IsTradingAllowed(string symbol, datetime time, ENUM_ORDER_TYPE basketType = NULL);

@@ -50,7 +50,7 @@ protected:
 
 public:
     CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-                  RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager);
+                  RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager);
     ~CSymbolExpert();
 
 public:
@@ -64,7 +64,7 @@ public:
 };
 
 CSymbolExpert::CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-                             RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager)
+                             RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
 {
     pSymbol = symbol;
     _maxSpread = maxSpread;
@@ -73,13 +73,13 @@ CSymbolExpert::CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, 
     _recoveryOptions = options;
     _riskOptions = riskOptions;
     _pnlManager = pnlManager;
+    _tradingStatusManager = tradingStatusManager;
 }
 
 int CSymbolExpert::OnInit()
 {
     _reporter = new CReporter();
-    _constants = new CConstants();    
-    _tradingStatusManager = new CTradingStatusManager();
+    _constants = new CConstants();
 
     _filterManager = new CFilterManager();
     RegisterFilters(_filterManager);
@@ -209,8 +209,8 @@ class FirstEA : public CSymbolExpert
 
 public:
     FirstEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-            RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager)
-        : CSymbolExpert(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions, pnlManager) {}
+            RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+        : CSymbolExpert(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions, pnlManager, tradingStatusManager) {}
 
 protected:
     void RegisterFilters(CFilterManager *filterManager)
