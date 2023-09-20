@@ -3,7 +3,6 @@
 #include "TradingStatus.mqh"
 #include "..\Options.mqh"
 
-
 class CPnLManager : public CObject
 {
 private:
@@ -21,6 +20,11 @@ public:
 
 bool CPnLManager::CheckPnLRules(string symbol, datetime time, double accountProfit)
 {
+    if (_options.maxLossForAllPairs <= 0)
+    {
+        return (true); // There is not limitation
+    }
+    
     if (accountProfit < 0 && MathAbs(accountProfit) > _options.maxLossForAllPairs)
     {
         // 1- Adding rule to prevent future trading until either restart or expiry

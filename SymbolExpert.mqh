@@ -25,15 +25,16 @@ private:
     CPnLManager *_pnlManager;
     CTradingStatusManager *_tradingStatusManager;
 
+    CTradingManager *buyRecovery;
     CTradingBasket *_buyBasket;
+    CSignalManager *_buySignalManager;
+
+    CTradingManager *sellRecovery;
     CTradingBasket *_sellBasket;
+    CSignalManager *_sellSignalManager;
 
     CNormalLotSizeCalculator *_normalLotCalc;
     CLotSizeCalculator *_lotCalc;
-    CTradingManager *buyRecovery;
-    CTradingManager *sellRecovery;
-    CSignalManager *_buySignalManager;
-    CSignalManager *_sellSignalManager;
     CFilterManager *_filterManager;
     int _maxSpread;
     int _defaultSLPoints;
