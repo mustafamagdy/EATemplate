@@ -2,6 +2,7 @@
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
 #include "TradingBasket.mqh"
+#include "TradingStatus.mqh"
 #include "..\Filters\FilterManager.mqh"
 #include "..\Constants.mqh"
 #include "..\UI\Reporter.mqh"
@@ -15,19 +16,17 @@ protected:
     CConstants *constants;
     CTradingBasket *_basket;
     CReporter *_reporter;
-    CFilterManager _entryFilters;
-    CFilterManager _exitFilters;
+    CTradingStatusManager *_tradingStatusManager;
 
     CTrade _trade;
     CPositionInfo _position;
 
 public:
-    CTradingManager(CTradingBasket *basket, CReporter *reporter, CFilterManager &entryFilters, CFilterManager &exitFilters)
+    CTradingManager(CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
     {
         _basket = basket;
         _reporter = reporter;
-        _entryFilters = entryFilters;
-        _exitFilters = exitFilters;
+        _tradingStatusManager = tradingStatusManager;
     }
 
 public:
@@ -66,18 +65,15 @@ public:
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice,
                                     string &message, Trade &newTrade, double virtualSLPrice = 0, double virtualTPPrice = 0, string comment = "")
     {
-
-        if (_entryFilters.AllAgree())
+        if(!_tradingStatusManager.IsTradingAllowed(_basket.Symbol(), TimeCurrent(), orderType))
         {
-            bool success = _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPrice, virtualTPPrice, comment);
-            _reporter.ReportTradeOpen(orderType);
-            return success;
-        }
-        else
-        {
-            _reporter.ReportWarning("Some filters don\'t agree to open more trades");
+            _reporter.ReportWarning("Trading is not allowed because of Profit/Loss rules");
             return (false);
         }
+
+        bool success = _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPrice, virtualTPPrice, comment);
+        _reporter.ReportTradeOpen(orderType);
+        return success;
     }
 
     virtual void OnTick()

@@ -2,6 +2,7 @@
 #include <Trade\PositionInfo.mqh>
 #include <Object.mqh>
 #include "Trade.mqh"
+#include "PnLManager.mqh"
 #include "..\UI\Reporter.mqh"
 
 enum ENUM_BASKET_STATUS
@@ -14,7 +15,9 @@ enum ENUM_BASKET_STATUS
 class CTradingBasket : public CObject
 {
 private:
-    CReporter _reporter;
+    CReporter *_reporter;
+    CPnLManager *_pnlManager;
+
     Trade _trades[];
     ENUM_BASKET_STATUS _basketStatus;
     long _magicNumber;
@@ -26,7 +29,7 @@ private:
     double profit;
 
 public:
-    CTradingBasket(string symbol, long magicNumber);
+    CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CPnLManager *pnlManager);
     ~CTradingBasket();
 
 public:
@@ -61,15 +64,18 @@ public:
     void OnTick();
 
 private:
+    void CheckPnL();
     void UpdateAvgTpForBasketTrades();
     void UpdateVirtualSlForBasketTrades();
     void UpdateCurrentTrades();
 };
 
-CTradingBasket::CTradingBasket(string symbol, long magicNumber)
+CTradingBasket::CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CPnLManager *pnlManager)
 {
     pSymbol = symbol;
     _magicNumber = magicNumber;
+    _reporter = reporter;
+    _pnlManager = pnlManager;
     _basketStatus = BASKET_CLOSED;
     ArrayResize(_trades, 0);
 }
@@ -397,6 +403,14 @@ void CTradingBasket::UpdateCurrentTrades()
     }
 }
 
+void CTradingBasket::CheckPnL()
+{
+    if (!_pnlManager.CheckPnLRules(Symbol(), TimeCurrent(), Profit()))
+    {
+        CloseBasketOrders();
+    }
+}
+
 void CTradingBasket::OnTick()
 {
     if (_basketStatus == BASKET_CLOSING)
@@ -405,6 +419,7 @@ void CTradingBasket::OnTick()
     }
 
     CTradingBasket::UpdateCurrentTrades();
+    CTradingBasket::CheckPnL();
 }
 
 /**********************************************/

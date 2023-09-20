@@ -1,6 +1,7 @@
 #include <Object.mqh>
 #include ".\TradingBasket.mqh";
 #include ".\TradingManager.mqh";
+#include "TradingStatus.mqh"
 #include "..\Enums.mqh";
 #include "..\Constants.mqh";
 #include "..\Options.mqh";
@@ -26,8 +27,8 @@ private:
 public:
     CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CSignalManager *signalManager,
                                        CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
-                                       RecoveryOptions &options, CFilterManager &entryFilters, CFilterManager &exitFilters)
-        : CTradingManager(basket, reporter, entryFilters, exitFilters)
+                                       CTradingStatusManager *tradingStatusManager, RecoveryOptions &options)
+        : CTradingManager(basket, reporter, tradingStatusManager)
     {
         _options = options;
         _basket = basket;

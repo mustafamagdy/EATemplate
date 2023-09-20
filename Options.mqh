@@ -41,3 +41,9 @@ struct RiskOptions
     ENUM_RISK_SOURCE riskSource;
     double riskPercentage;
 };
+
+struct PnLOptions
+{
+    double maxLossForAllPairs;
+    ENUM_PNL_RESET_MODE resetMode;
+};

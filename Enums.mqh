@@ -71,7 +71,7 @@ enum ENUM_BASKET_PNL_TYPE
     MAX_PNL_PERCENT_EQUITY = 2,     // Percentage of equity
 };
 
-enum ENUM_BASKET_PNL_RESET_MODE
+enum ENUM_PNL_RESET_MODE
 {
     RESET_24_HOURS = 0,      // Reset after 24 hours
     RESET_AFTER_RESTART = 1, // Reset after restart

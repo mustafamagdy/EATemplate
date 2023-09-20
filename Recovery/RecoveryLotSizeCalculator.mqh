@@ -199,9 +199,9 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
    return CalculateLotSize(symbol, riskPoints, 0, 0, 0, orderType);
 }
 
-CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc,
-                                                       ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode, double recoveryFixedLotSize, string recoveryLotSeries,
-                                                       double lotMultiplier, ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode)
+CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
+                                                       double recoveryFixedLotSize, string recoveryLotSeries, double lotMultiplier,
+                                                       ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode)
     : CLotSizeCalculator()
 {
    _mormalLotSizeCalc = normalLotSizeCalc;
