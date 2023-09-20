@@ -1,12 +1,13 @@
 #include <Object.mqh>
 #include "Common.mqh"
-#include "Trade\TradingBasket.mqh";
-#include "Candles\CandleTypes.mqh";
-#include "RiskManagement\NormalLotSizeCalculator.mqh";
+#include "Trade\TradingBasket.mqh"
+#include "Candles\CandleTypes.mqh"
+#include "RiskManagement\NormalLotSizeCalculator.mqh"
 #include "Trade\RecoveryManager.mqh"
-#include "Trade\NormalTradingManager.mqh";
-#include "Trade\TradingStatus.mqh";
-#include "UI\Reporter.mqh";
+#include "Trade\NormalTradingManager.mqh"
+#include "Trade\TradingStatus.mqh"
+#include "Trade\PnLManager.mqh"
+#include "UI\Reporter.mqh"
 #include "Enums.mqh"
 
 #include "Signals\BandsSignal.mqh"
@@ -42,7 +43,6 @@ private:
 
     RecoveryOptions _recoveryOptions;
     RiskOptions _riskOptions;
-    PnLOptions _pnlOptions;
 
 protected:
     CReporter *_reporter;
@@ -50,7 +50,7 @@ protected:
 
 public:
     CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-                  RecoveryOptions &options, RiskOptions &riskOptions, PnLOptions &PnLOptions);
+                  RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager);
     ~CSymbolExpert();
 
 public:
@@ -64,7 +64,7 @@ public:
 };
 
 CSymbolExpert::CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-                             RecoveryOptions &options, RiskOptions &riskOptions, PnLOptions &pnLOptions)
+                             RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager)
 {
     pSymbol = symbol;
     _maxSpread = maxSpread;
@@ -72,14 +72,13 @@ CSymbolExpert::CSymbolExpert(string symbol, int maxSpread, int defaultSLPoints, 
     _defaultTPPoints = defaultTPPoints;
     _recoveryOptions = options;
     _riskOptions = riskOptions;
-    _pnlOptions = pnLOptions;
+    _pnlManager = pnlManager;
 }
 
 int CSymbolExpert::OnInit()
 {
     _reporter = new CReporter();
-    _constants = new CConstants();
-    _pnlManager = new CPnLManager(_pnlOptions);
+    _constants = new CConstants();    
     _tradingStatusManager = new CTradingStatusManager();
 
     _filterManager = new CFilterManager();
@@ -91,8 +90,11 @@ int CSymbolExpert::OnInit()
     _sellSignalManager = new CSignalManager();
     RegisterSellSignals(_sellSignalManager);
 
-    _buyBasket = new CTradingBasket(pSymbol, 14324, _reporter, _pnlManager);
-    _sellBasket = new CTradingBasket(pSymbol, 45332, _reporter, _pnlManager);
+    _buyBasket = new CTradingBasket(pSymbol, 14324, _reporter);
+    _sellBasket = new CTradingBasket(pSymbol, 45332, _reporter);
+
+    _pnlManager.RegisterBasket(_buyBasket);
+    _pnlManager.RegisterBasket(_sellBasket);
 
     _normalLotCalc = new CNormalLotSizeCalculator(_riskOptions.riskType, _riskOptions.fixedLot, _riskOptions.riskSource, _riskOptions.riskPercentage,
                                                   _riskOptions.xBalance, _riskOptions.lotPerXBalance);
@@ -207,8 +209,8 @@ class FirstEA : public CSymbolExpert
 
 public:
     FirstEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-            RecoveryOptions &options, RiskOptions &riskOptions, PnLOptions &pnLOptions)
-        : CSymbolExpert(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions, pnLOptions) {}
+            RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager)
+        : CSymbolExpert(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions, pnlManager) {}
 
 protected:
     void RegisterFilters(CFilterManager *filterManager)
