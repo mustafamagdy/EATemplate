@@ -73,8 +73,8 @@ enum ENUM_BASKET_PNL_TYPE
 
 enum ENUM_PNL_RESET_MODE
 {
-    RESET_24_HOURS = 0,      // Reset after 24 hours
-    RESET_AFTER_RESTART = 1, // Reset after restart
+    RESET_AFTER_N_MINUTES = 0, // Reset after number of minutes
+    RESET_AFTER_RESTART = 1,   // Reset after restart
 };
 
 enum ENUM_BASKET_MAX_SLTP_MODE

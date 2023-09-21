@@ -46,4 +46,5 @@ struct PnLOptions
 {
     double maxLossForAllPairs;
     ENUM_PNL_RESET_MODE resetMode;
+    int resetAfterNMinutes;
 };

@@ -15,6 +15,7 @@ private:
 
 public:
     void OnTick();
+    bool ValidateInput();
 
 public:
     CPnLManager(PnLOptions &options, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
@@ -42,6 +43,19 @@ public:
     }
 };
 
+bool CPnLManager::ValidateInput() 
+{
+   if(_options.maxLossForAllPairs == 0 || _options.maxProfitForAllPairs == 0) { return (true); }
+   
+   
+   if(_options.resetMode  == RESET_AFTER_N_MINUTES && _options.resetAfterNMinutes <= 0) {
+      _reporter.ReportError("Reset after minutes must be a positive number");
+      return (false);
+   }
+   
+   return (true);   
+}
+
 void CPnLManager::OnTick()
 {
     if (_options.maxLossForAllPairs <= 0)
@@ -54,9 +68,9 @@ void CPnLManager::OnTick()
         datetime time = TimeCurrent();
         CTradingStatus rule = new CTradingStatus();
         string reason = StringFormat("Loss reached %.2f and configured max value is %.2f", MathAbs(accountProfit), _options.maxLossForAllPairs);
-        if (_options.resetMode == RESET_24_HOURS)
+        if (_options.resetMode == RESET_AFTER_N_MINUTES)
         {
-            datetime expiryTime = time + (24 * 60 * 60);
+            datetime expiryTime = time + (_options.resetAfterNMinutes * 60);
             rule.PauseTradingUntilExpiry(TRADING_PAUSED_ACCOUNT, reason, expiryTime, "", NULL);
         }
         else
