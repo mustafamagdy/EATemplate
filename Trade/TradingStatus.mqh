@@ -1,5 +1,6 @@
 #include <Object.mqh>
 #include "..\UI\Reporter.mqh"
+#include "..\Common.mqh"
 
 enum ENUM_TRADING_STATUS
 {
@@ -214,8 +215,8 @@ bool CTradingStatusManager::IsTradingAllowed(string symbol, datetime time, ENUM_
         CTradingStatus basketStatus;
         if (FindBasketRule(symbol, basketType, basketStatus))
         {
-            bool allowed = basketStatus.TradingStatus() == TRADING_STATUS_ALLOWED;
-            if (!allowed && (basketStatus.ExpiryDateTime() == 0 || basketStatus.ExpiryDateTime() > time))
+            bool basketAllowed = basketStatus.TradingStatus() == TRADING_STATUS_ALLOWED;
+            if (!basketAllowed && (basketStatus.ExpiryDateTime() == 0 || basketStatus.ExpiryDateTime() > time))
             {
                 return false;
             }
@@ -227,8 +228,8 @@ bool CTradingStatusManager::IsTradingAllowed(string symbol, datetime time, ENUM_
         CTradingStatus symbolStatus;
         if (FindSymbolRule(symbol, symbolStatus))
         {
-            bool allowed = symbolStatus.TradingStatus() == TRADING_STATUS_ALLOWED;
-            if (!allowed && (symbolStatus.ExpiryDateTime() == 0 || symbolStatus.ExpiryDateTime() > time))
+            bool symbolAllowed = symbolStatus.TradingStatus() == TRADING_STATUS_ALLOWED;
+            if (!symbolAllowed && (symbolStatus.ExpiryDateTime() == 0 || symbolStatus.ExpiryDateTime() > time))
             {
                 return false;
             }
@@ -240,8 +241,8 @@ bool CTradingStatusManager::IsTradingAllowed(string symbol, datetime time, ENUM_
         CTradingStatus accountStatus;
         if (FindAccountRule(accountStatus))
         {
-            bool allowed = accountStatus.TradingStatus() == TRADING_STATUS_ALLOWED;
-            if (!allowed && (accountStatus.ExpiryDateTime() == 0 || accountStatus.ExpiryDateTime() > time))
+            bool accountAllowed = accountStatus.TradingStatus() == TRADING_STATUS_ALLOWED;
+            if (!accountAllowed && (accountStatus.ExpiryDateTime() == 0 || accountStatus.ExpiryDateTime() > time))
             {
                 return false;
             }

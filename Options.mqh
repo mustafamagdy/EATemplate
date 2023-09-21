@@ -44,6 +44,7 @@ struct RiskOptions
 
 struct PnLOptions
 {
+    double maxProfitForAllPairs;
     double maxLossForAllPairs;
     ENUM_PNL_RESET_MODE resetMode;
     int resetAfterNMinutes;

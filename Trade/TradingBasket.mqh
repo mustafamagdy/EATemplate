@@ -1,14 +1,20 @@
+#ifdef __MQL5__
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
+#else
+#include "Trade_mql4.mqh"
+#include "PositionInfo.mqh"
+#endif
 #include <Object.mqh>
 #include "Trade.mqh"
 #include "..\UI\Reporter.mqh"
+#include "..\Common.mqh"
 
 enum ENUM_BASKET_STATUS
 {
     BASKET_OPEN = 0,
     BASKET_CLOSING = 1,
-    BASKET_CLOSED = 2
+    BASKET_CLOSED = 2,
 };
 
 class CTradingBasket : public CObject
@@ -259,7 +265,7 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
 
     MqlTradeResult result;
     CTrade _trade;
-    _trade.SetExpertMagicNumber(_magicNumber);
+    _trade.SetExpertMagicNumber((int)_magicNumber);
     _trade.PositionOpen(pSymbol, orderType, volume, price, slPrice, tpPrice, comment);
     _trade.Result(result);
 

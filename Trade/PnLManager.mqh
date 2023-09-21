@@ -43,17 +43,20 @@ public:
     }
 };
 
-bool CPnLManager::ValidateInput() 
+bool CPnLManager::ValidateInput()
 {
-   if(_options.maxLossForAllPairs == 0 || _options.maxProfitForAllPairs == 0) { return (true); }
-   
-   
-   if(_options.resetMode  == RESET_AFTER_N_MINUTES && _options.resetAfterNMinutes <= 0) {
-      _reporter.ReportError("Reset after minutes must be a positive number");
-      return (false);
-   }
-   
-   return (true);   
+    if (_options.maxLossForAllPairs == 0 || _options.maxProfitForAllPairs == 0)
+    {
+        return (true);
+    }
+
+    if (_options.resetMode == RESET_AFTER_N_MINUTES && _options.resetAfterNMinutes <= 0)
+    {
+        _reporter.ReportError("Reset after minutes must be a positive number");
+        return (false);
+    }
+
+    return (true);
 }
 
 void CPnLManager::OnTick()
@@ -66,7 +69,7 @@ void CPnLManager::OnTick()
     if (accountProfit < 0 && MathAbs(accountProfit) > _options.maxLossForAllPairs)
     {
         datetime time = TimeCurrent();
-        CTradingStatus rule = new CTradingStatus();
+        CTradingStatus *rule = new CTradingStatus();
         string reason = StringFormat("Loss reached %.2f and configured max value is %.2f", MathAbs(accountProfit), _options.maxLossForAllPairs);
         if (_options.resetMode == RESET_AFTER_N_MINUTES)
         {
@@ -78,9 +81,12 @@ void CPnLManager::OnTick()
             rule.PauseTradingUntilRestart(TRADING_PAUSED_ACCOUNT, reason, "", NULL);
         }
 
-        // 1- Adding rule to prevent future trading until either restart or expiry
+// 1- Adding rule to prevent future trading until either restart or expiry
+#ifdef __MQL5__
         _tradingStatusManager.AddNewRule(&rule);
-
+#else
+        _tradingStatusManager.AddNewRule(rule);
+#endif
         // 2- Closing all orders in all baskets
         for (int i = 0; i < ArraySize(_baskets); i++)
         {

@@ -1,6 +1,11 @@
 #include "SignalBase.mqh";
 #include "..\Indicators\IndicatorIBands.mqh";
 
+#ifdef __MQL4__
+#define UPPER_BAND MODE_UPPER
+#define LOWER_BAND MODE_LOWER
+#endif
+
 class CBandsSignal : public CSignalBase
 {
 
@@ -12,7 +17,7 @@ private:
 
    ENUM_SIGNAL _prevSignal;
 
-private:   
+private:
    ENUM_SIGNAL CalcSignal();
 
 protected:

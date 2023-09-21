@@ -1,13 +1,21 @@
+#property strict
+
+#ifdef __MQL5__
 #include <Object.mqh>
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
+#else
+
+#endif
 #include "TradingBasket.mqh"
 #include "TradingStatus.mqh"
 #include "..\Filters\FilterManager.mqh"
 #include "..\Constants.mqh"
 #include "..\UI\Reporter.mqh"
-
-#property strict
+#ifdef __MQL4__
+#include "Trade_mql4.mqh"
+#include "PositionInfo.mqh"
+#endif
 
 class CTradingManager : public CObject
 {
@@ -66,7 +74,7 @@ public:
                                     string &message, Trade &newTrade, double virtualSLPrice = 0, double virtualTPPrice = 0, string comment = "")
     {
         // if(!_tradingStatusManager.IsTradingAllowed(_basket.Symbol(), TimeCurrent(), orderType))
-        if(!_tradingStatusManager.IsTradingAllowed("", TimeCurrent(), NULL))
+        if (!_tradingStatusManager.IsTradingAllowed("", TimeCurrent(), NULL))
         {
             _reporter.ReportWarning("Trading is not allowed because of Profit/Loss rules");
             return (false);

@@ -10,6 +10,7 @@ public:
     static const double AccountEquity() { return AccountInfoDouble(ACCOUNT_EQUITY); }
     static const double AccountFreeMargin() { return AccountInfoDouble(ACCOUNT_MARGIN_FREE); }
     static const int AccountLeverage() { return (int)AccountInfoInteger(ACCOUNT_LEVERAGE); }
+#ifdef __MQL5__
     static const double MarginRequired(string symbol)
     {
         double rate = 0;
@@ -22,7 +23,26 @@ public:
 
         return (rate);
     }
-    static const double AccountBalance() { return AccountInfoDouble(ACCOUNT_BALANCE); }
+#else
+    double MarginRequired(string symbol)
+    {
+        double lotSize = 1.0;
+        double askPrice = MarketInfo(symbol, MODE_ASK);
+        double requiredMargin = MarketInfo(symbol, MODE_MARGINREQUIRED) * lotSize;
+
+        // If the calculation fails or returns an invalid value
+        if (requiredMargin <= 0)
+        {
+            return 0.0;
+        }
+
+        return requiredMargin;
+    }
+#endif
+    static const double AccountBalance()
+    {
+        return AccountInfoDouble(ACCOUNT_BALANCE);
+    }
 
     static const double MinLot(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN); }
     static const double MaxLot(string symbol) { return SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX); }
