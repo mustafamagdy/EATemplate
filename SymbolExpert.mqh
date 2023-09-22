@@ -12,6 +12,7 @@
 
 #include "Signals\BandsSignal.mqh"
 #include "Signals\ZigZagSignal.mqh"
+#include "Signals\MACDSignal.mqh"
 #include "Signals\SignalManager.mqh"
 #include "Filters\FilterManager.mqh"
 #include "Filters\AtrFilter.mqh"
@@ -219,11 +220,15 @@ protected:
 
     void RegisterBuySignals(CSignalManager *signalManager)
     {
-        signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
+        // signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
+        signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
+        // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
     }
 
     void RegisterSellSignals(CSignalManager *signalManager)
     {
-        signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
+        // signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
+        signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
+        // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
     }
 };

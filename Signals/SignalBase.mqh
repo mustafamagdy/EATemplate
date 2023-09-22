@@ -14,6 +14,6 @@ public:
    }
 
 public:
-   virtual bool ValidateInputs() = NULL;
-   virtual ENUM_SIGNAL GetSignal() = NULL;
+   virtual bool ValidateInputs() = 0;
+   virtual ENUM_SIGNAL GetSignal() = 0;
 };
