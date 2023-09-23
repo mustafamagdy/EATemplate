@@ -9,6 +9,8 @@ class CGridGapCalculator : public CObject
 {
 
 private:
+    string pSymbol;
+    CConstants *_constants;
     ENUM_GRID_SIZE_MODE _gridSizeMode;               // Grid Size Mode
     int _gridFixedSize;                              // Fixed Grid Size (Points)
     ENUM_GRID_FIXED_CUSTOM_MODE _gridCustomSizeMode; // Custom Size Mode
@@ -21,7 +23,6 @@ private:
     int _gridATRMax;                                 // ATR Maximum GAP (Points, 0=No Max)
 
 private:
-    CConstants constants;
     CIndicatorATR *atr;
 
 protected:
@@ -30,7 +31,7 @@ protected:
     int CalculateNextSizeMultiplier(int lastSize, string series, int lastOrderNumber);
 
 public:
-    CGridGapCalculator(string symbol, ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
+    CGridGapCalculator(string symbol, CConstants *constants, ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
                        ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode, string gridCustomSeries,
                        int gridATRPeriod, ENUM_TIMEFRAMES gridATRTimeframe, ENUM_VALUE_ACTION gridATRValueAction, double gridATRActionValue, int gridATRMin, int _gridATRMax);
     ~CGridGapCalculator()
@@ -69,7 +70,7 @@ int CGridGapCalculator::CalculateNextOrderDistance(int orderCount, double lastOr
                 // No previous order, this is the first grid order
                 return _MinSize();
             }
-            int distance = (int)MathFloor(MathAbs(NormalizeDouble(previousOrderPrice - lastOrderPrice, _Digits) / _Point));
+            int distance = (int)MathFloor(MathAbs(NormalizeDouble(previousOrderPrice - lastOrderPrice, _Digits) / _constants.Point(pSymbol)));
             int nextSizeInSeries = CalculateNextSizeMultiplier(distance, _gridCustomSeries, orderCount);
             return NormalizeSize(nextSizeInSeries);
         }
@@ -78,7 +79,7 @@ int CGridGapCalculator::CalculateNextOrderDistance(int orderCount, double lastOr
     case GRID_SIZE_ATR:
     {
 
-        double atrValue = atr.GetValue(0) / _Point;
+        double atrValue = atr.GetValue(0) / _constants.Point(pSymbol);
 
         switch (_gridATRValueAction)
         {
@@ -99,7 +100,7 @@ int CGridGapCalculator::CalculateNextSize(string series, int lastOrderNumber, bo
 {
     string arSeries[];
     int values[];
-    ushort sep = StringGetCharacter(constants.Separator(), 0);
+    ushort sep = StringGetCharacter(_constants.Separator(), 0);
     int count = StringSplit(series, sep, arSeries);
     if (count > 0)
     {
@@ -132,7 +133,7 @@ int CGridGapCalculator::CalculateNextSizeMultiplier(int lastSize, string series,
 {
     string arSeries[];
     double values[];
-    ushort sep = StringGetCharacter(constants.Separator(), 0);
+    ushort sep = StringGetCharacter(_constants.Separator(), 0);
     int count = StringSplit(series, sep, arSeries);
     double multiplier = 1;
     if (count > 0)
@@ -178,7 +179,7 @@ int _MinSize()
     return 50;
 }
 
-CGridGapCalculator::CGridGapCalculator(string symbol, ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
+CGridGapCalculator::CGridGapCalculator(string symbol, CConstants *constants, ENUM_GRID_SIZE_MODE gridSizeMode, int gridFixedSize,
                                        ENUM_GRID_FIXED_CUSTOM_MODE gridCustomSizeMode, string gridCustomSeries,
                                        int gridATRPeriod, ENUM_TIMEFRAMES gridATRTimeframe, ENUM_VALUE_ACTION gridATRValueAction, double gridATRActionValue,
                                        int gridATRMin, int gridATRMax)
@@ -193,6 +194,8 @@ CGridGapCalculator::CGridGapCalculator(string symbol, ENUM_GRID_SIZE_MODE gridSi
     _gridATRTimeframe = gridATRTimeframe;
     _gridATRMin = gridATRMin;
     _gridATRMax = gridATRMax;
+    pSymbol = symbol;
+    _constants = constants;
 
     atr = new CIndicatorATR(symbol, _gridATRTimeframe, _gridATRPeriod, 0);
 }

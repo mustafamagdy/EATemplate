@@ -25,17 +25,17 @@ private:
     double _recoverySLPrice;
 
 public:
-    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CReporter *reporter, CSignalManager *signalManager,
+    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CSignalManager *signalManager,
                                        CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
                                        CTradingStatusManager *tradingStatusManager, RecoveryOptions &options)
-        : CTradingManager(basket, reporter, tradingStatusManager)
+        : CTradingManager(constants, basket, reporter, tradingStatusManager)
     {
         _options = options;
         _basket = basket;
         _signalManager = signalManager;
         _normalLotCalc = normalLotCalc;
         _recoveryLotCalc = recoveryLotCalc;
-        _gridGapCalc = new CGridGapCalculator(_basket.Symbol(), options.gridSizeMode, options.gridFixedSize, options.gridCustomSizeMode, options.gridGapCustomSeries,
+        _gridGapCalc = new CGridGapCalculator(_basket.Symbol(), constants, options.gridSizeMode, options.gridFixedSize, options.gridCustomSizeMode, options.gridGapCustomSeries,
                                               options.gridATRPeriod, options.newBarTimeframe, options.gridATRValueAction, options.gridATRActionValue, options.gridATRMin, options.gridATRMax);
     }
 
@@ -74,8 +74,8 @@ void CRecoveryManager::OnTick()
 
     string symbol = _basket.Symbol();
     bool isItBuy = lastTrade.OrderType() == ORDER_TYPE_BUY;
-    double ask = constants.Ask(symbol);
-    double bid = constants.Bid(symbol);
+    double ask = _constants.Ask(symbol);
+    double bid = _constants.Bid(symbol);
     double spread = ask - bid;
     double lastTradeSL = lastTrade.VirtualStopLoss();
     double directionFactor = (isItBuy ? -1 : 1);
@@ -110,7 +110,7 @@ void CRecoveryManager::SetRecoveryPrices(Trade &firstTrade, double directionFact
         _recoveryAvgTPrice = firstTrade.VirtualTakeProfit();
         if (_options.recoverySLPoints > 0)
         {
-            _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
+            _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _constants.Point(_basket.Symbol())));
         }
     }
 }
@@ -125,10 +125,10 @@ bool CRecoveryManager::CheckHitSL(Trade &firstTrade, double directionFactor, boo
     {
     case MAX_SL_MODE_AVERAGE:
     {
-        double currentAvgOpenPrice = _basket.AverageOpenPrice();                               // Get the new average open price
-        double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _Point; // Calculate the distance moved from the initial average open price
+        double currentAvgOpenPrice = _basket.AverageOpenPrice();                                                           // Get the new average open price
+        double distanceMoved = MathAbs(currentAvgOpenPrice - firstTrade.OpenPrice()) / _constants.Point(_basket.Symbol()); // Calculate the distance moved from the initial average open price
         double dynamicStopLossDistance = (_options.recoverySLPoints - distanceMoved);
-        _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * dynamicStopLossDistance * _Point); // Update the stop loss based on the dynamic distance
+        _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * dynamicStopLossDistance * _constants.Point(_basket.Symbol())); // Update the stop loss based on the dynamic distance
         hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice);
         break;
     }
@@ -139,8 +139,8 @@ bool CRecoveryManager::CheckHitSL(Trade &firstTrade, double directionFactor, boo
     }
     case MAX_SL_MODE_GAP_FROM_FIRST:
     {
-        double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _Point;
-        _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _Point));
+        double distance = MathAbs(firstTrade.OpenPrice() - (isItBuy ? bid : ask)) / _constants.Point(_basket.Symbol());
+        _recoverySLPrice = firstTrade.OpenPrice() + (directionFactor * (_options.recoverySLPoints * _constants.Point(_basket.Symbol())));
         hitSL = _recoverySLPrice > 0 && (isItBuy ? bid <= _recoverySLPrice : ask >= _recoverySLPrice); // distance >= _options.recoverySLPoints;
         break;
     }
@@ -181,7 +181,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
     bool signalSell = _signalManager.GetSignalWithAnd(SIGNAL_SELL);
 
     bool tradeOnlyOnSignal = !_options.gridTradeOnlyBySignal || signalBuy || signalSell;
-    bool tradeOnlyNewBar = !_options.gridTradeOnlyNewBar || constants.IsNewBar(symbol, _options.newBarTimeframe);
+    bool tradeOnlyNewBar = !_options.gridTradeOnlyNewBar || _constants.IsNewBar(symbol, _options.newBarTimeframe);
 
     if (tradeOnlyOnSignal && tradeOnlyNewBar)
     {
@@ -197,12 +197,12 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
             bool hasSignal = false;
             if (orderType == ORDER_TYPE_BUY && (!_options.gridTradeOnlyBySignal || signalBuy))
             {
-                nextSLPrice = ask - NormalizeDouble(nextGridGap * _Point, _Digits);
+                nextSLPrice = ask - NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
                 hasSignal = true;
             }
             else if (orderType == ORDER_TYPE_SELL && (!_options.gridTradeOnlyBySignal || signalSell))
             {
-                nextSLPrice = bid + NormalizeDouble(nextGridGap * _Point, _Digits);
+                nextSLPrice = bid + NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
                 hasSignal = true;
             }
 
@@ -228,7 +228,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
         }
         else if (_options.recoveryMode == RECOVERY_HEDGING)
         {
-            double nextSLPrice = ask + NormalizeDouble(nextGridGap * _Point, _Digits);
+            double nextSLPrice = ask + NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
             ENUM_ORDER_TYPE newOrderType = orderType == ORDER_TYPE_BUY ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
             double nextLot = NextLotSize(symbol, nextGridGap, lastLot, firstLot, newOrderType);
             if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
@@ -266,7 +266,7 @@ bool CRecoveryManager::OpenTradeWithPoints(double volume, double price, ENUM_ORD
     double ask = SymbolInfoDouble(_basket.Symbol(), SYMBOL_ASK);
     double bid = SymbolInfoDouble(_basket.Symbol(), SYMBOL_BID);
     double spread = ask - bid;
-    int spread_points = (int)MathRound(spread / _Point);
+    int spread_points = (int)MathRound(spread / _constants.Point(_basket.Symbol()));
     if (slPoints <= spread_points)
     {
         message = "SL points is less than the spread points";
@@ -275,13 +275,13 @@ bool CRecoveryManager::OpenTradeWithPoints(double volume, double price, ENUM_ORD
 
     if (orderType == ORDER_TYPE_BUY)
     {
-        slPrice = slPoints > 0 ? price - (slPoints * _Point) : 0;
-        tpPrice = tpPoints > 0 ? price + (tpPoints * _Point) : 0;
+        slPrice = slPoints > 0 ? price - (slPoints * _constants.Point(_basket.Symbol())) : 0;
+        tpPrice = tpPoints > 0 ? price + (tpPoints * _constants.Point(_basket.Symbol())) : 0;
     }
     else
     {
-        slPrice = slPoints > 0 ? price + (slPoints * _Point) : 0;
-        tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
+        slPrice = slPoints > 0 ? price + (slPoints * _constants.Point(_basket.Symbol())) : 0;
+        tpPrice = tpPoints > 0 ? price - (tpPoints * _constants.Point(_basket.Symbol())) : 0;
     }
     return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
 }
@@ -358,13 +358,13 @@ void CRecoveryManager::DrawPriceLine(string name, double price, color clr, ENUM_
 double CRecoveryManager::CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction)
 {
     double avgOpenPrice = _basket.AverageOpenPrice();
-    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? 1 : -1) * _options.recoveryTpPoints * _Point), _Digits);
+    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? 1 : -1) * _options.recoveryTpPoints * _constants.Point(_basket.Symbol())), _Digits);
 }
 
 double CRecoveryManager::CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direction)
 {
     double avgOpenPrice = _basket.AverageOpenPrice();
-    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? -1 : 1) * _options.recoverySLPoints * _Point), _Digits);
+    return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? -1 : 1) * _options.recoverySLPoints * _constants.Point(_basket.Symbol())), _Digits);
 }
 
 double CRecoveryManager::NextLotSize(string symbol, int slPoints, double lastLot, double firstLot, ENUM_ORDER_TYPE direction)
@@ -390,11 +390,11 @@ double CRecoveryManager::NextLotSize(string symbol, int slPoints, double lastLot
             lotSize = MathAbs((buyLots * ((_options.recoveryTpPoints + slPoints) / (double)_options.recoveryTpPoints)) - sellLots);
         }
 
-        lotSize = MathCeil(lotSize / constants.LotStep(symbol)) * constants.LotStep(symbol);
+        lotSize = MathCeil(lotSize / _constants.LotStep(symbol)) * _constants.LotStep(symbol);
     }
     else
     {
-        lotSize = constants.MinLot(symbol);
+        lotSize = _constants.MinLot(symbol);
     }
 
     lotSize = _options.maxGridLots > 0 ? MathMin(lotSize, _options.maxGridLots) : lotSize;

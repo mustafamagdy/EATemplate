@@ -9,6 +9,7 @@
 #include "Trade.mqh"
 #include "..\UI\Reporter.mqh"
 #include "..\Common.mqh"
+#include "..\Constants.mqh"
 
 enum ENUM_BASKET_STATUS
 {
@@ -21,6 +22,7 @@ class CTradingBasket : public CObject
 {
 private:
     CReporter *_reporter;
+    CConstants *_constants;
 
     Trade _trades[];
     ENUM_BASKET_STATUS _basketStatus;
@@ -33,7 +35,7 @@ private:
     double profit;
 
 public:
-    CTradingBasket(string symbol, long magicNumber, CReporter *reporter);
+    CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CConstants *constants);
     ~CTradingBasket();
 
 public:
@@ -74,11 +76,12 @@ private:
     void UpdateCurrentTrades();
 };
 
-CTradingBasket::CTradingBasket(string symbol, long magicNumber, CReporter *reporter)
+CTradingBasket::CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CConstants *constants)
 {
     pSymbol = symbol;
     _magicNumber = magicNumber;
     _reporter = reporter;
+    _constants = constants;
     _basketStatus = BASKET_CLOSED;
     ArrayResize(_trades, 0);
 }
@@ -227,7 +230,7 @@ bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER
     double ask = SymbolInfoDouble(pSymbol, SYMBOL_ASK);
     double bid = SymbolInfoDouble(pSymbol, SYMBOL_BID);
     double spread = ask - bid;
-    int spread_points = (int)MathRound(spread / _Point);
+    int spread_points = (int)MathRound(spread / _constants.Point(pSymbol));
     if (slPoints <= spread_points)
     {
         message = "SL points is less than the spread points";
@@ -236,13 +239,13 @@ bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER
 
     if (orderType == ORDER_TYPE_BUY)
     {
-        slPrice = slPoints > 0 ? price - (slPoints * _Point) : 0;
-        tpPrice = tpPoints > 0 ? price + (tpPoints * _Point) : 0;
+        slPrice = slPoints > 0 ? price - (slPoints * _constants.Point(pSymbol)) : 0;
+        tpPrice = tpPoints > 0 ? price + (tpPoints * _constants.Point(pSymbol)) : 0;
     }
     else
     {
-        slPrice = slPoints > 0 ? price + (slPoints * _Point) : 0;
-        tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
+        slPrice = slPoints > 0 ? price + (slPoints * _constants.Point(pSymbol)) : 0;
+        tpPrice = tpPoints > 0 ? price - (tpPoints * _constants.Point(pSymbol)) : 0;
     }
 
     return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPoints, virtualTPPoints, comment);

@@ -1,6 +1,6 @@
 #include "LotSizeCalculatorBase.mqh";
 #include "..\Enums.mqh";
-
+#include "..\Constants.mqh"
 #property strict
 
 class CNormalLotSizeCalculator : public CLotSizeCalculator
@@ -15,14 +15,9 @@ private:
    double _lotPerXBalance;
 
 public:
-   CNormalLotSizeCalculator(
-       ENUM_RISK_TYPE riskType,
-       double fixedLot,
-       ENUM_RISK_SOURCE riskPercentageSource,
-       double riskPercentage,
-       double xBalance,
-       double lotPerXBalance)
-       : CLotSizeCalculator()
+   CNormalLotSizeCalculator(CConstants *constants, ENUM_RISK_TYPE riskType, double fixedLot, ENUM_RISK_SOURCE riskPercentageSource,
+                            double riskPercentage, double xBalance, double lotPerXBalance)
+       : CLotSizeCalculator(constants)
    {
       _riskType = riskType;
       _fixedLot = fixedLot;
@@ -53,22 +48,22 @@ double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskP
    }
    case RISK_TYPE_PER_XBALANCE:
    {
-      lotSize = constants.AccountBalance() / _xBalance * _lotPerXBalance;
+      lotSize = _constants.AccountBalance() / _xBalance * _lotPerXBalance;
       break;
    }
    case RISK_TYPE_PERCENTAGE:
    {
       if (_riskPercentageSource == RISK_PERCENTAGE_FROM_BALANCE)
       {
-         riskAmount = riskPercentage * constants.AccountBalance();
+         riskAmount = riskPercentage * _constants.AccountBalance();
       }
       else if (_riskPercentageSource == RISK_PERCENTAGE_FROM_EQUITY)
       {
-         riskAmount = riskPercentage * constants.AccountEquity();
+         riskAmount = riskPercentage * _constants.AccountEquity();
       }
       else if (_riskPercentageSource == RISK_PERCENTAGE_FROM_AVILABLE_MARGIN)
       {
-         riskAmount = riskPercentage * constants.AccountFreeMargin();
+         riskAmount = riskPercentage * _constants.AccountFreeMargin();
       }
 
       lotSize = GetRiskLots(symbol, riskPoints, riskAmount);
@@ -82,7 +77,7 @@ double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskP
 
 double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType = -1)
 {
-   int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice - slPrice), _Digits) / _Point);
+   int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice - slPrice), _Digits) / _constants.Point(symbol));
    return CalculateLotSize(symbol, points, orderType);
 }
 

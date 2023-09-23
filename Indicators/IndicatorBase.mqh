@@ -29,6 +29,7 @@ public:
 
   // Public methods
   bool IsValid() const { return (mHandle != INVALID_HANDLE); }
+  void SetTimeframe(int timeframe) { mTimeframe = timeframe; }
   int GetArray(int bufferNumber, int start, int count, double &arr[]);
   virtual double GetValue(int index) { return GetValue(0, index); }
   virtual double GetValue(int bufferNumber, int index);

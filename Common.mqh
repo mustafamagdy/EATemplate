@@ -11,6 +11,7 @@ void SafeDeletePointer(CObject *obj)
     }
 }
 
+#ifdef __MQL4__
 template <typename T>
 void ArrayRemove(T &arr[], int index, int count = 1)
 {
@@ -27,3 +28,13 @@ void ArrayRemove(T &arr[], int index, int count = 1)
 
     ArrayResize(arr, ArraySize(arr) - count);
 }
+#endif
+
+#ifdef __MQL5__
+int DayOfWeek()
+{
+    MqlDateTime dt;
+    TimeCurrent(dt);
+    return dt.day_of_week;
+}
+#endif

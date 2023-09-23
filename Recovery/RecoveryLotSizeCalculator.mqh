@@ -28,7 +28,7 @@ private:
 
 protected:
 public:
-   CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
+   CRecoveryLotSizeCalculator(CConstants *constants, CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
                               double recoveryFixedLotSize, string recoveryLotSeries, double lotMultiplier,
                               ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode);
    ~CRecoveryLotSizeCalculator();
@@ -90,12 +90,12 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
    }
    }
 
-   return constants.MinLot(symbol);
+   return _constants.MinLot(symbol);
 }
 
 double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType)
 {
-   int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice - slPrice), _Digits) / _Point);
+   int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice - slPrice), _Digits) / _constants.Point(symbol));
    return CalculateLotSize(symbol, points, 0, 0, 0, orderType);
 }
 
@@ -103,7 +103,7 @@ double CRecoveryLotSizeCalculator::CalculateNextLot(string symbol, string series
 {
    string arSeries[];
    double values[];
-   ushort sep = StringGetCharacter(constants.Separator(), 0);
+   ushort sep = StringGetCharacter(_constants.Separator(), 0);
    int count = StringSplit(series, sep, arSeries);
    if (count > 0)
    {
@@ -129,14 +129,14 @@ double CRecoveryLotSizeCalculator::CalculateNextLot(string symbol, string series
       }
    }
 
-   return constants.MinLot(symbol);
+   return _constants.MinLot(symbol);
 }
 
 double CRecoveryLotSizeCalculator::CalculateNextLotMultiplier(string symbol, double lastLot, string series, int lastOrderNumber)
 {
    string arSeries[];
    double values[];
-   ushort sep = StringGetCharacter(constants.Separator(), 0);
+   ushort sep = StringGetCharacter(_constants.Separator(), 0);
    int count = StringSplit(series, sep, arSeries);
    double multiplier = 1;
    if (count > 0)
@@ -167,7 +167,7 @@ double CRecoveryLotSizeCalculator::CalculateNextLotMultiplierFromOriginal(string
 {
    string arSeries[];
    double values[];
-   ushort sep = StringGetCharacter(constants.Separator(), 0);
+   ushort sep = StringGetCharacter(_constants.Separator(), 0);
    int count = StringSplit(series, sep, arSeries);
    double multiplier = 1;
    if (count > 0)
@@ -199,10 +199,10 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
    return CalculateLotSize(symbol, riskPoints, 0, 0, 0, orderType);
 }
 
-CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
+CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CConstants *constants, CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
                                                        double recoveryFixedLotSize, string recoveryLotSeries, double lotMultiplier,
                                                        ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode)
-    : CLotSizeCalculator()
+    : CLotSizeCalculator(constants)
 {
    _mormalLotSizeCalc = normalLotSizeCalc;
    _recoveryLotSizeMode = recoveryLotSizeMode;

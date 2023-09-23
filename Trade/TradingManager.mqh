@@ -21,7 +21,7 @@ class CTradingManager : public CObject
 {
 
 protected:
-    CConstants *constants;
+    CConstants *_constants;
     CTradingBasket *_basket;
     CReporter *_reporter;
     CTradingStatusManager *_tradingStatusManager;
@@ -30,8 +30,9 @@ protected:
     CPositionInfo _position;
 
 public:
-    CTradingManager(CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
+    CTradingManager(CConstants *constnats, CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
     {
+        _constants = constnats;
         _basket = basket;
         _reporter = reporter;
         _tradingStatusManager = tradingStatusManager;
@@ -46,7 +47,7 @@ public:
         double ask = SymbolInfoDouble(_basket.Symbol(), SYMBOL_ASK);
         double bid = SymbolInfoDouble(_basket.Symbol(), SYMBOL_BID);
         double spread = ask - bid;
-        int spread_points = (int)MathRound(spread / _Point);
+        int spread_points = (int)MathRound(spread / _constants.Point(_basket.Symbol()));
         if (slPoints <= spread_points && virtualSLPoints <= spread_points)
         {
             message = "SL points is less than the spread points";
@@ -55,17 +56,17 @@ public:
 
         if (orderType == ORDER_TYPE_BUY)
         {
-            slPrice = slPoints > 0 ? price - (slPoints * _Point) : 0;
-            tpPrice = tpPoints > 0 ? price + (tpPoints * _Point) : 0;
-            virtualSLPrice = virtualSLPoints > 0 ? price - (virtualSLPoints * _Point) : 0;
-            virtualTPPrice = virtualTPPoints > 0 ? price + (virtualTPPoints * _Point) : 0;
+            slPrice = slPoints > 0 ? price - (slPoints * _constants.Point(_basket.Symbol())) : 0;
+            tpPrice = tpPoints > 0 ? price + (tpPoints * _constants.Point(_basket.Symbol())) : 0;
+            virtualSLPrice = virtualSLPoints > 0 ? price - (virtualSLPoints * _constants.Point(_basket.Symbol())) : 0;
+            virtualTPPrice = virtualTPPoints > 0 ? price + (virtualTPPoints * _constants.Point(_basket.Symbol())) : 0;
         }
         else
         {
-            slPrice = slPoints > 0 ? price + (slPoints * _Point) : 0;
-            tpPrice = tpPoints > 0 ? price - (tpPoints * _Point) : 0;
-            virtualSLPrice = virtualSLPoints > 0 ? price + (virtualSLPoints * _Point) : 0;
-            virtualTPPrice = virtualTPPoints > 0 ? price - (virtualTPPoints * _Point) : 0;
+            slPrice = slPoints > 0 ? price + (slPoints * _constants.Point(_basket.Symbol())) : 0;
+            tpPrice = tpPoints > 0 ? price - (tpPoints * _constants.Point(_basket.Symbol())) : 0;
+            virtualSLPrice = virtualSLPoints > 0 ? price + (virtualSLPoints * _constants.Point(_basket.Symbol())) : 0;
+            virtualTPPrice = virtualTPPoints > 0 ? price - (virtualTPPoints * _constants.Point(_basket.Symbol())) : 0;
         }
         return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPrice, virtualTPPrice, comment);
     }

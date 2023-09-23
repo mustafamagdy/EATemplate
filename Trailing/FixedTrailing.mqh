@@ -2,17 +2,22 @@
 
 #include <Trade\PositionInfo.mqh>
 #include ".\TrailingBase.mqh"
+#include "..\Constants.mqh"
 
 class CFixedTrailing : public CTrailingBase
 {
 private:
     double _trailingStep;
+    CConstants *_constants;
+    string pSymbol;
 
 public:
-    CFixedTrailing(string symbol, double trailingStop, double trailingStep)
+    CFixedTrailing(string symbol, CConstants *constants, double trailingStop, double trailingStep)
         : CTrailingBase(symbol, trailingStop)
     {
+        pSymbol = symbol;
         _trailingStep = trailingStep;
+        _constants = constants;
     }
     ~CFixedTrailing() {}
 
@@ -41,12 +46,12 @@ bool CFixedTrailing::CheckTrailing(double originalSlPrice, double openPrice, ENU
 
     slPrice = EMPTY_VALUE;
     tpPrice = EMPTY_VALUE;
-    delta = _trailingStop * _Point;
+    delta = _trailingStop * _constants.Point(pSymbol);
     if (price - base > delta)
     {
         slPrice = price - delta;
         if (_trailingStep != 0)
-            tpPrice = price + _trailingStep * _Point;
+            tpPrice = price + _trailingStep * _constants.Point(pSymbol);
     }
 
     return (slPrice != EMPTY_VALUE);

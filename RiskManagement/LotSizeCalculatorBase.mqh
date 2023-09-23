@@ -10,14 +10,17 @@ private:
    double MaxLotForMarginAvailable(string symbol);
 
 protected:
-   CConstants constants;
+   CConstants *_constants;
 
 protected:
    double GetRiskAmount(string symbol, double riskPoints, double riskLotSize);
    double GetRiskLots(string symbol, double riskPoints, double riskAmount);
 
 public:
-   CLotSizeCalculator(){};
+   CLotSizeCalculator(CConstants *constants)
+   {
+      _constants = constants;
+   };
    ~CLotSizeCalculator(){};
 
 public:
@@ -30,15 +33,15 @@ public:
 
 double CLotSizeCalculator::GetRiskAmount(string symbol, double riskPoints, double riskLotSize)
 {
-   return riskPoints * riskLotSize * _Point;
+   return riskPoints * riskLotSize * _constants.Point(symbol);
 }
 
 double CLotSizeCalculator::GetRiskLots(string symbol, double riskPoints, double riskAmount)
 {
    if (riskPoints == 0)
-      return constants.MinLot(symbol);
+      return _constants.MinLot(symbol);
    double commission = 7;
-   double pointValue = _Point;
+   double pointValue = _constants.Point(symbol);
    double x = riskPoints * pointValue;
    double y = x + commission;
    double z = riskAmount / y;
@@ -50,9 +53,9 @@ double CLotSizeCalculator::NormalizeLot(string symbol, double lots)
 {
    double NormalizedLot; // The final LotSize, bounded by broker's specs
    double InverseLotStep;
-   double LotStep = constants.LotStep(symbol);
-   double MinLot = constants.MinLot(symbol);
-   double MaxLot = constants.MaxLot(symbol);
+   double LotStep = _constants.LotStep(symbol);
+   double MinLot = _constants.MinLot(symbol);
+   double MaxLot = _constants.MaxLot(symbol);
    if (MinLot == 0.0)
       MinLot = 0.1; // In case MarketInfo returns no info
    if (MaxLot == 0.0)
@@ -74,15 +77,15 @@ double CLotSizeCalculator::NormalizeLot(string symbol, double lots)
       NormalizedLot = MinLot; // Broker's absolute minimum Lot
    if (NormalizedLot > MaxLot)
       NormalizedLot = MaxLot; // Broker's absolute maximum Lot
-      
+
    return NormalizeDouble(NormalizedLot, 2);
 }
 
 double CLotSizeCalculator::MaxLotForMarginAvailable(string symbol)
 {
 
-   double freeMargin = constants.AccountFreeMargin();
-   double equity = constants.AccountEquity();
+   double freeMargin = _constants.AccountFreeMargin();
+   double equity = _constants.AccountEquity();
    // constants.LogVerbose(StringFormat("Free margin= %g",freeMargin));
    // constants.LogVerbose(StringFormat("equity= %g",equity));
 
@@ -98,10 +101,10 @@ double CLotSizeCalculator::MaxLotForMarginAvailable(string symbol)
 
    // constants.LogVerbose(StringFormat("availableMargin= %g",availableMargin));
 
-   double marginPerLot = constants.MarginRequired(symbol);
+   double marginPerLot = _constants.MarginRequired(symbol);
    if (marginPerLot == 0)
    {
-      return constants.MaxLot(symbol);
+      return _constants.MaxLot(symbol);
    }
 
    // constants.LogVerbose(StringFormat("marginPerLot= %g",marginPerLot));
