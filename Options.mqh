@@ -8,7 +8,6 @@ struct RecoveryOptions
     bool gridTradeOnlyBySignal;
     bool gridTradeOnlyNewBar;
     ENUM_TIMEFRAMES newBarTimeframe;
-    ENUM_RECOVERY_MODE recoveryMode;
     double recoveryTpPoints;
     int maxGridOrderCount;
     ENUM_BASKET_MAX_ORDER_BEHAVIOUR basketMaxOrderBehaviour;

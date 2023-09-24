@@ -193,48 +193,23 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
         string message;
         Trade trade;
 
-        // Check the recovery type here to know the next direction
-        if (_options.recoveryMode == RECOVERY_MARTINGALE)
+        double nextSLPrice = 0;
+        bool hasSignal = false;
+        if (orderType == ORDER_TYPE_BUY && (!_options.gridTradeOnlyBySignal || signalBuy))
         {
-            double nextSLPrice = 0;
-            bool hasSignal = false;
-            if (orderType == ORDER_TYPE_BUY && (!_options.gridTradeOnlyBySignal || signalBuy))
-            {
-                nextSLPrice = ask - NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
-                hasSignal = true;
-            }
-            else if (orderType == ORDER_TYPE_SELL && (!_options.gridTradeOnlyBySignal || signalSell))
-            {
-                nextSLPrice = bid + NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
-                hasSignal = true;
-            }
-
-            if (hasSignal)
-            {
-                double nextLot = NextLotSize(symbol, nextGridGap, lastLot, firstLot, orderType);
-                if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
-                {
-                    _reporter.ReportTradeOpen(orderType, nextLot);
-                    if (_options.maxGridOrderCount != 0 && _basket.Count() > _options.maxGridOrderCount)
-                    {
-                        if (_options.basketMaxOrderBehaviour == MAX_ORDER_CLOSE_FIRST_ORDER)
-                        {
-                            _basket.CloseFirstOrder();
-                        }
-                    }
-                }
-                else
-                {
-                    _reporter.ReportError("Failed to open grid order");
-                }
-            }
+            nextSLPrice = ask - NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
+            hasSignal = true;
         }
-        else if (_options.recoveryMode == RECOVERY_HEDGING)
+        else if (orderType == ORDER_TYPE_SELL && (!_options.gridTradeOnlyBySignal || signalSell))
         {
-            double nextSLPrice = ask + NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
-            ENUM_ORDER_TYPE newOrderType = orderType == ORDER_TYPE_BUY ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
-            double nextLot = NextLotSize(symbol, nextGridGap, lastLot, firstLot, newOrderType);
-            if (OpenTradeWithPrice(nextLot, ask, newOrderType, nextSLPrice, _recoveryAvgTPrice, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
+            nextSLPrice = bid + NormalizeDouble(nextGridGap * _constants.Point(_basket.Symbol()), _Digits);
+            hasSignal = true;
+        }
+
+        if (hasSignal)
+        {
+            double nextLot = NextLotSize(symbol, nextGridGap, lastLot, firstLot, orderType);
+            if (OpenTradeWithPrice(nextLot, ask, orderType, nextSLPrice, 0, StringFormat("RM: Order %d", _basket.Count() + 1), message, trade))
             {
                 _reporter.ReportTradeOpen(orderType, nextLot);
                 if (_options.maxGridOrderCount != 0 && _basket.Count() > _options.maxGridOrderCount)
@@ -380,32 +355,9 @@ double CRecoveryManager::NextLotSize(string symbol, int slPoints, double lastLot
 {
     int basketCount = _basket.LastOrderCount();
     double lotSize = 0;
-    if (_options.recoveryMode == RECOVERY_MARTINGALE)
-    {
-        lotSize = _basket.IsEmpty()
-                      ? _normalLotCalc.CalculateLotSize(symbol, slPoints, lastLot, firstLot, basketCount, direction)
-                      : _recoveryLotCalc.CalculateLotSize(symbol, slPoints, lastLot, firstLot, basketCount, direction);
-    }
-    else if (_options.recoveryMode == RECOVERY_HEDGING)
-    {
-        double sellLots = _basket.Volume(ORDER_TYPE_SELL);
-        double buyLots = _basket.Volume(ORDER_TYPE_BUY);
-        if (direction == ORDER_TYPE_BUY)
-        {
-            lotSize = MathAbs((sellLots * ((_options.recoveryTpPoints + slPoints) / (double)_options.recoveryTpPoints)) - buyLots);
-        }
-        else
-        {
-            lotSize = MathAbs((buyLots * ((_options.recoveryTpPoints + slPoints) / (double)_options.recoveryTpPoints)) - sellLots);
-        }
-
-        lotSize = MathCeil(lotSize / _constants.LotStep(symbol)) * _constants.LotStep(symbol);
-    }
-    else
-    {
-        lotSize = _constants.MinLot(symbol);
-    }
-
+    lotSize = _basket.IsEmpty()
+                  ? _normalLotCalc.CalculateLotSize(symbol, slPoints, lastLot, firstLot, basketCount, direction)
+                  : _recoveryLotCalc.CalculateLotSize(symbol, slPoints, lastLot, firstLot, basketCount, direction);
     lotSize = _options.maxGridLots > 0 ? MathMin(lotSize, _options.maxGridLots) : lotSize;
     return _normalLotCalc.NormalizeLot(symbol, lotSize);
 }
