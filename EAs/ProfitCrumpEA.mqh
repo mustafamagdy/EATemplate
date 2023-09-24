@@ -123,8 +123,9 @@ double point = _constants.Point(pSymbol);
             double slPrice = price + ((direction == ORDER_TYPE_BUY ? -1 : 1) * (slPoints * point));
             double lots = _lotCalc.CalculateLotSize(pSymbol, price, slPrice, direction);
             string message;
+            string comment = direction == ORDER_TYPE_BUY ? "Open buy order" : "Open sell order";
             Trade trade;
-            if (!sellRecovery.OpenTradeWithPoints(lots, price, direction, 0, 0, message, trade, slPoints, tpPoints, "test sell"))
+            if (!sellRecovery.OpenTradeWithPoints(lots, price, direction, 0, 0, message, trade, slPoints, tpPoints, comment))
             {
                 PrintFormat("Failed to open sell trade: %s", message);
             }

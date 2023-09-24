@@ -57,6 +57,7 @@ private:
     string GetTPLineName();
     string GetSLLineName();
     string GetAVGOpenPriceLineName();
+    string GetNextOrderLineName();
 };
 
 void CRecoveryManager::OnTick()
@@ -89,6 +90,8 @@ void CRecoveryManager::OnTick()
     {
         DrawPriceLine(GetSLLineName(), _recoverySLPrice, clrIndianRed, STYLE_DASH);
     }
+
+    DrawPriceLine(GetNextOrderLineName(), lastTradeSL, clrPink, STYLE_DASH);
 
     if (hitTP || hitSL)
     {
@@ -257,6 +260,7 @@ void CRecoveryManager::CleanUp()
         RemovePriceLine(GetTPLineName());
         RemovePriceLine(GetSLLineName());
         RemovePriceLine(GetAVGOpenPriceLineName());
+        RemovePriceLine(GetNextOrderLineName());
     }
 }
 
@@ -325,6 +329,11 @@ string CRecoveryManager::GetSLLineName()
 string CRecoveryManager::GetAVGOpenPriceLineName()
 {
     return StringFormat("avg_open_%d", _basket.MagicNumber());
+}
+
+string CRecoveryManager::GetNextOrderLineName()
+{
+    return StringFormat("next_order_%d", _basket.MagicNumber());
 }
 
 void CRecoveryManager::RemovePriceLine(string name)
