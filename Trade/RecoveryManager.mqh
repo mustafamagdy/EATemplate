@@ -83,7 +83,12 @@ void CRecoveryManager::OnTick()
 
     SetRecoveryPrices(firstTrade, directionFactor);
 
-    bool hitTP = isItBuy ? bid >= _recoveryAvgTPrice : ask <= _recoveryAvgTPrice;
+    double totalCommissionAndSwap = _basket.TotalCommission() + _basket.TotalSwap();
+    double adjustmentPerPoint = (totalCommissionAndSwap / _basket.Volume()) / _constants.Point(_basket.Symbol());
+    double adjustedTP = isItBuy ? (_recoveryAvgTPrice - adjustmentPerPoint) : (_recoveryAvgTPrice + adjustmentPerPoint);
+
+    bool hitTP = isItBuy ? bid >= adjustedTP : ask <= adjustedTP;
+
     bool hitSL = CheckHitSL(firstTrade, directionFactor, isItBuy, bid, ask);
 
     if (_options.showSLLine && _recoverySLPrice > 0)
@@ -165,12 +170,12 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
     if (!hitNextOrderOpen)
         return;
 
-    if ((!isItBuy && bid <= lastTradeSL) || (isItBuy && ask >= lastTradeSL))
-    {
-        _reporter.ReportWarning("Spread is too wide, cannot open any orders now.");
-        return;
-    }
-
+    /*
+        if(_basket.Count() == 1) {
+            //reduce first order by closing 2/3 of it on loss and start recoving it
+            _basket.ClosePartial(0.93);
+        }
+    */
     if (_options.maxGridOrderCount != 0 && _basket.Count() >= _options.maxGridOrderCount)
     {
         if (_options.basketMaxOrderBehaviour == MAX_ORDER_STOP_ADDING_GRID)

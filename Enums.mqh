@@ -20,13 +20,6 @@ enum ENUM_RISK_SOURCE
     RISK_PERCENTAGE_FROM_AVILABLE_MARGIN = 2, //% of Available Margin
 };
 
-enum ENUM_RECOVERY_MODE
-{
-    RECOVERY_NONE = 0,       // No Recovery
-    RECOVERY_MARTINGALE = 1, // Martingale
-    RECOVERY_HEDGING = 2,    // Hedging
-};
-
 enum ENUM_RECOVERY_LOT_SIZE_MODE
 {
     RECOVERY_LOT_FIXED = 0,        // Fixed Lot

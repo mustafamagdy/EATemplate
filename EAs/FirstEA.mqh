@@ -1,11 +1,12 @@
 #include "ExpertBase.mqh"
+#include "..\Signals\EMATrendSignal.mqh"
 
 class CFirstEA : public CExpertBase
 {
 
 public:
     CFirstEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-            RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+             RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
         : CExpertBase(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions, pnlManager, tradingStatusManager) {}
 
 protected:
@@ -16,14 +17,16 @@ protected:
     void RegisterBuySignals(CSignalManager *signalManager)
     {
         // signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
-        signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
+        // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
+        signalManager.RegisterSignal(new CEMASignal(pSymbol, PERIOD_M5, 21, MODE_EMA, PRICE_CLOSE, 0.0001));
         // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
     }
 
     void RegisterSellSignals(CSignalManager *signalManager)
     {
         // signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
-        signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
+        // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
+        signalManager.RegisterSignal(new CEMASignal(pSymbol, PERIOD_M5, 21, MODE_EMA, PRICE_CLOSE, 0.0001));
         // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
     }
 

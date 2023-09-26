@@ -195,6 +195,8 @@ double point = _constants.Point(pSymbol);
 
     int GetProfitCrumpSymbolGridGap(string symbol)
     {
+        if (symbol == "BTCUSD")
+            return 3000;
         if (symbol == "EURUSD")
             return 480;
         if (symbol == "USDCAD")

@@ -1,0 +1,6 @@
+- update sl/tp 
+- UI
+- supply and demand zone + grid
+- range breakout
+- trend line breakout + price action
+-  

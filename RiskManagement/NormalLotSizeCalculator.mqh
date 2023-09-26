@@ -29,12 +29,12 @@ public:
    ~CNormalLotSizeCalculator(){};
 
 public:
-   double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1);
-   double CalculateLotSize(string symbol, const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType = -1);
+   double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType);
+   double CalculateLotSize(string symbol, const double openPrice, const double slPrice, ENUM_ORDER_TYPE orderType);
    double CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType);
 };
 
-double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType = -1)
+double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType)
 {
    double lotSize = 0;
    double riskAmount = 0;
@@ -75,7 +75,7 @@ double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskP
    return normalizedLotSize;
 }
 
-double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType = -1)
+double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType)
 {
    int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice - slPrice), _Digits) / _constants.Point(symbol));
    return CalculateLotSize(symbol, points, orderType);
@@ -83,5 +83,5 @@ double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const double op
 
 double CNormalLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType)
 {
-   return CalculateLotSize(symbol, riskPoints, 0, 0, orderType);
+   return CalculateLotSize(symbol, riskPoints, orderType);
 }

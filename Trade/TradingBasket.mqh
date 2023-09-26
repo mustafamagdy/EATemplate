@@ -1,6 +1,7 @@
 #ifdef __MQL5__
 #include <Trade\Trade.mqh>
 #include <Trade\PositionInfo.mqh>
+#include <Trade\DealInfo.mqh>
 #else
 #include "Trade_mql4.mqh"
 #include "PositionInfo.mqh"
@@ -33,6 +34,7 @@ private:
     int lastOrderCount;
     double firstOrderVolume;
     double profit;
+    double totalCommission;
 
 public:
     CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CConstants *constants);
@@ -67,6 +69,9 @@ public:
     void CloseBasketOrders();
     bool UpdateSLTP(int recoverySLPoints, double tpPrice);
     void CloseFirstOrder();
+    void ClosePartial(double ratioToClose);
+    double CTradingBasket::TotalCommission() { return 0; /*return totalCommission; */ }
+    double TotalSwap();
     void OnTick();
 
 private:
@@ -140,8 +145,10 @@ void CTradingBasket::CloseFirstOrder()
         ulong ticket = _trades[0].Ticket();
         if (_position.SelectByTicket(ticket))
         {
+            double commission = _position.Commission();
             if (_trade.PositionClose(ticket, ULONG_MAX))
             {
+                totalCommission -= commission;
                 ArrayRemove(_trades, 0, 1);
                 // Do we need to update profit?
             }
@@ -157,6 +164,54 @@ void CTradingBasket::CloseFirstOrder()
     }
 }
 
+void CTradingBasket::ClosePartial(double ratioToClose)
+{
+    if (ratioToClose <= 0 || ratioToClose >= 1)
+    {
+        Print("Invalid ratio provided. Should be between 0 and 1.");
+        return;
+    }
+
+    CTrade _trade;
+    CPositionInfo _position;
+    for (int i = Count() - 1; i >= 0; i--)
+    {
+        ulong ticket = _trades[i].Ticket();
+        if (_position.SelectByTicket(ticket))
+        {
+            double currentVolume = _position.Volume();
+            double volumeToClose = currentVolume * ratioToClose;
+            double totalCommissionForPosition = _position.Commission();
+            double commissionClosedPortion = totalCommissionForPosition * (volumeToClose / currentVolume);
+
+            if (_trade.PositionClosePartial(ticket, volumeToClose, ULONG_MAX))
+            {
+                totalCommission -= commissionClosedPortion;
+                ArrayRemove(_trades, i, 1);
+            }
+            else
+            {
+                PrintFormat("Failed to close position %d", ticket);
+            }
+        }
+    }
+}
+
+double CTradingBasket::TotalSwap()
+{
+return 0;
+    double totalSwap = 0.0;
+    CPositionInfo _position;
+    for (int i = 0; i < Count(); i++)
+    {
+        ulong ticket = _trades[i].Ticket();
+        if (_position.SelectByTicket(ticket))
+        {
+            totalSwap += _position.Swap();
+        }
+    }
+    return totalSwap;
+}
 bool CTradingBasket::UpdateSLTP(int recoverySLPoints, double tpPrice)
 {
     CTrade _trade;
@@ -268,6 +323,7 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
 
     MqlTradeResult result;
     CTrade _trade;
+    CDealInfo _deal;
     _trade.SetExpertMagicNumber((int)_magicNumber);
     _trade.PositionOpen(pSymbol, orderType, volume, price, slPrice, tpPrice, comment);
     _trade.Result(result);
@@ -284,6 +340,7 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
         newTrade = trade;
         _basketStatus = BASKET_OPEN;
         lastOrderCount++;
+        totalCommission += _deal.Commission();
     }
     else
     {
@@ -368,8 +425,10 @@ void CTradingBasket::CloseBasketOrders()
         ulong ticket = _trades[i].Ticket();
         if (_position.SelectByTicket(ticket))
         {
+            double commission = _position.Commission();
             if (_trade.PositionClose(ticket, ULONG_MAX))
             {
+                totalCommission -= commission;
                 ArrayRemove(_trades, i, 1);
             }
             else
@@ -383,6 +442,7 @@ void CTradingBasket::CloseBasketOrders()
     {
         _basketStatus = BASKET_CLOSED;
         profit = 0;
+        totalCommission = 0;
     }
 }
 
