@@ -44,7 +44,7 @@ CMACDSignal::CMACDSignal(string symbol, ENUM_TIMEFRAMES timeframe, ENUM_MACD_SIG
     _timeframe = timeframe;
     _signalType = signalType;
     _reverseSignal = reverseSignal;
-    _prevSignal = SIGNAL_NUTURAL;
+    _prevSignal = SIGNAL_NEUTRAL;
 }
 
 ENUM_SIGNAL CMACDSignal::CalcSignal()
@@ -82,7 +82,7 @@ ENUM_SIGNAL CMACDSignal::CalcSignal()
     }
     }
 
-    return SIGNAL_NUTURAL;
+    return SIGNAL_NEUTRAL;
 }
 
 ENUM_SIGNAL CMACDSignal::GetSignal(void)
@@ -95,5 +95,5 @@ ENUM_SIGNAL CMACDSignal::GetSignal(void)
         return signal;
     }
 
-    return SIGNAL_NUTURAL;
+    return SIGNAL_NEUTRAL;
 }

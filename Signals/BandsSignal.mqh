@@ -44,7 +44,7 @@ CBandsSignal::CBandsSignal(string symbol, ENUM_TIMEFRAMES timeframe, int period,
    _timeframe = timeframe;
    _reverseSignal = reverseSignal;
 
-   _prevSignal = SIGNAL_NUTURAL;
+   _prevSignal = SIGNAL_NEUTRAL;
 }
 
 ENUM_SIGNAL CBandsSignal::CalcSignal()
@@ -71,7 +71,7 @@ ENUM_SIGNAL CBandsSignal::CalcSignal()
    }
    else
    {
-      return SIGNAL_NUTURAL;
+      return SIGNAL_NEUTRAL;
    }
 }
 
@@ -86,5 +86,5 @@ ENUM_SIGNAL CBandsSignal::GetSignal(void)
       return signal;
    }
 
-   return SIGNAL_NUTURAL;
+   return SIGNAL_NEUTRAL;
 }

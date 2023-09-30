@@ -40,7 +40,7 @@ CZigZagSignal::CZigZagSignal(string symbol, ENUM_TIMEFRAMES timeframe, int depth
    _timeframe = timeframe;
    _reverseSignal = reverseSignal;
 
-   _prevSignal = SIGNAL_NUTURAL;
+   _prevSignal = SIGNAL_NEUTRAL;
 }
 
 ENUM_SIGNAL CZigZagSignal::CalcSignal()
@@ -52,7 +52,7 @@ ENUM_SIGNAL CZigZagSignal::CalcSignal()
    int z2Bar = GetPreviousZigZagBar(z1Bar, z1Value);
    double z2Value = _indi.GetValue(z2Bar);
 
-   ENUM_SIGNAL signal = SIGNAL_NUTURAL;
+   ENUM_SIGNAL signal = SIGNAL_NEUTRAL;
 
    if (z1Value < z2Value)
    {
@@ -96,5 +96,5 @@ int CZigZagSignal::GetPreviousZigZagBar(int bar, double zValue)
          return signal;
       }
 
-      return SIGNAL_NUTURAL;
+      return SIGNAL_NEUTRAL;
    }
