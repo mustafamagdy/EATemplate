@@ -4,7 +4,7 @@
 #include "..\Trade\TradingBasket.mqh"
 #include "..\Candles\CandleTypes.mqh"
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh"
-#include "..\Trade\RecoveryManager.mqh"
+#include "..\Trade\MartingaleManager.mqh"
 #include "..\Trade\NormalTradingManager.mqh"
 #include "..\Trade\TradingStatus.mqh"
 #include "..\Trade\PnLManager.mqh"
@@ -107,8 +107,8 @@ int CExpertBase::OnInit()
     _lotCalc = new CRecoveryLotSizeCalculator(_constants, _normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.gridLotSeries,
                                               _recoveryOptions.lotMultiplier, _recoveryOptions.lotCustomMode);
 
-    buyRecovery = new CRecoveryManager(_buyBasket, _constants, _reporter, _buySignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
-    sellRecovery = new CRecoveryManager(_sellBasket, _constants, _reporter, _sellSignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
+    buyRecovery = new CMartingaleManager(_buyBasket, _constants, _reporter, _buySignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
+    sellRecovery = new CMartingaleManager(_sellBasket, _constants, _reporter, _sellSignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
 
     if (!ValidateInputs())
     {

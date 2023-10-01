@@ -12,7 +12,7 @@
 #include "..\UI\Reporter.mqh";
 #include "..\Filters\FilterManager.mqh"
 
-class CRecoveryManager : public CTradingManager
+class CMartingaleManager : public CTradingManager
 {
 
 private:
@@ -25,7 +25,7 @@ private:
     double _recoverySLPrice;
 
 public:
-    CRecoveryManager::CRecoveryManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CSignalManager *signalManager,
+    CMartingaleManager::CMartingaleManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CSignalManager *signalManager,
                                        CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
                                        CTradingStatusManager *tradingStatusManager, RecoveryOptions &options)
         : CTradingManager(constants, basket, reporter, tradingStatusManager)
@@ -60,7 +60,7 @@ private:
     string GetNextOrderLineName();
 };
 
-void CRecoveryManager::OnTick()
+void CMartingaleManager::OnTick()
 {
     if (_basket.Status() != BASKET_OPEN || _basket.IsEmpty())
     {
@@ -111,7 +111,7 @@ void CRecoveryManager::OnTick()
     CTradingManager::OnTick();
 }
 
-void CRecoveryManager::SetRecoveryPrices(Trade &firstTrade, double directionFactor)
+void CMartingaleManager::SetRecoveryPrices(Trade &firstTrade, double directionFactor)
 {
     if (_basket.Count() == 1)
     {
@@ -123,7 +123,7 @@ void CRecoveryManager::SetRecoveryPrices(Trade &firstTrade, double directionFact
     }
 }
 
-bool CRecoveryManager::CheckHitSL(Trade &firstTrade, double directionFactor, bool isItBuy, double bid, double ask)
+bool CMartingaleManager::CheckHitSL(Trade &firstTrade, double directionFactor, bool isItBuy, double bid, double ask)
 {
     if (_options.recoverySLPoints == 0)
         return false;
@@ -157,7 +157,7 @@ bool CRecoveryManager::CheckHitSL(Trade &firstTrade, double directionFactor, boo
     return hitSL;
 }
 
-void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, double ask, double bid, bool isItBuy)
+void CMartingaleManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, double ask, double bid, bool isItBuy)
 {
     double lastOpenPrice = lastTrade.OpenPrice();
     double firstTradeTp = lastTrade.TakeProfit();
@@ -233,7 +233,7 @@ void CRecoveryManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, dou
     }
 }
 
-void CRecoveryManager::CleanUp()
+void CMartingaleManager::CleanUp()
 {
     if (_basket.IsEmpty())
     {
@@ -244,7 +244,7 @@ void CRecoveryManager::CleanUp()
     }
 }
 
-bool CRecoveryManager::OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
+bool CMartingaleManager::OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string comment, string &message, Trade &newTrade)
 {
     double slPrice = 0, tpPrice = 0;
     double ask = SymbolInfoDouble(_basket.Symbol(), SYMBOL_ASK);
@@ -270,7 +270,7 @@ bool CRecoveryManager::OpenTradeWithPoints(double volume, double price, ENUM_ORD
     return OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, comment, message, newTrade);
 }
 
-bool CRecoveryManager::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
+bool CMartingaleManager::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string comment, string &message, Trade &newTrade)
 {
     bool result = CTradingManager::OpenTradeWithPrice(volume, price, orderType, 0, 0, message, newTrade, slPrice, tpPrice, comment);
     if (result)
@@ -296,33 +296,33 @@ bool CRecoveryManager::OpenTradeWithPrice(double volume, double price, ENUM_ORDE
 }
 
 ////////////////////////////////////////////////////
-string CRecoveryManager::GetTPLineName()
+string CMartingaleManager::GetTPLineName()
 {
     return StringFormat("avg_tp_%d", _basket.MagicNumber());
 }
 
-string CRecoveryManager::GetSLLineName()
+string CMartingaleManager::GetSLLineName()
 {
     return StringFormat("avg_sl_%d", _basket.MagicNumber());
 }
 
-string CRecoveryManager::GetAVGOpenPriceLineName()
+string CMartingaleManager::GetAVGOpenPriceLineName()
 {
     return StringFormat("avg_open_%d", _basket.MagicNumber());
 }
 
-string CRecoveryManager::GetNextOrderLineName()
+string CMartingaleManager::GetNextOrderLineName()
 {
     return StringFormat("next_order_%d", _basket.MagicNumber());
 }
 
-void CRecoveryManager::RemovePriceLine(string name)
+void CMartingaleManager::RemovePriceLine(string name)
 {
     if (ObjectFind(0, name) >= 0)
         ObjectDelete(0, name);
 }
 
-void CRecoveryManager::DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style)
+void CMartingaleManager::DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style)
 {
     if (ObjectFind(0, name) >= 0)
         ObjectDelete(0, name);
@@ -344,19 +344,19 @@ void CRecoveryManager::DrawPriceLine(string name, double price, color clr, ENUM_
     }
 }
 
-double CRecoveryManager::CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction)
+double CMartingaleManager::CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction)
 {
     double avgOpenPrice = _basket.AverageOpenPrice();
     return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? 1 : -1) * _options.recoveryTpPoints * _constants.Point(_basket.Symbol())), _Digits);
 }
 
-double CRecoveryManager::CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direction)
+double CMartingaleManager::CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direction)
 {
     double avgOpenPrice = _basket.AverageOpenPrice();
     return NormalizeDouble(avgOpenPrice + (((direction == ORDER_TYPE_BUY) ? -1 : 1) * _options.recoverySLPoints * _constants.Point(_basket.Symbol())), _Digits);
 }
 
-double CRecoveryManager::NextLotSize(string symbol, int slPoints, double lastLot, double firstLot, ENUM_ORDER_TYPE direction)
+double CMartingaleManager::NextLotSize(string symbol, int slPoints, double lastLot, double firstLot, ENUM_ORDER_TYPE direction)
 {
     int basketCount = _basket.LastOrderCount();
     double lotSize = 0;
