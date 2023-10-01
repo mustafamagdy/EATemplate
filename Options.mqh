@@ -1,6 +1,6 @@
 #include "Enums.mqh";
 
-struct RecoveryOptions
+struct MartingaleOptions
 {
     bool showTpLine;
     bool showSLLine;

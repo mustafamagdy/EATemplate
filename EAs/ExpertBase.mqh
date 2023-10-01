@@ -33,7 +33,7 @@ private:
     CFilterManager *_filterManager;
     int _maxSpread;
 
-    RecoveryOptions _recoveryOptions;
+    MartingaleOptions _recoveryOptions;
     RiskOptions _riskOptions;
 
 protected:
@@ -53,7 +53,7 @@ protected:
 
 public:
     CExpertBase(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-                RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager);
+                MartingaleOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager);
     ~CExpertBase();
 
 public:
@@ -69,7 +69,7 @@ public:
 };
 
 CExpertBase::CExpertBase(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-                         RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+                         MartingaleOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
 {
     pSymbol = symbol;
     _maxSpread = maxSpread;

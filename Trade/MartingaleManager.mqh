@@ -20,14 +20,14 @@ private:
     CRecoveryLotSizeCalculator *_recoveryLotCalc;
     CGridGapCalculator *_gridGapCalc;
     CSignalManager *_signalManager;
-    RecoveryOptions _options;
+    MartingaleOptions _options;
     double _recoveryAvgTPrice;
     double _recoverySLPrice;
 
 public:
     CMartingaleManager::CMartingaleManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CSignalManager *signalManager,
                                        CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
-                                       CTradingStatusManager *tradingStatusManager, RecoveryOptions &options)
+                                       CTradingStatusManager *tradingStatusManager, MartingaleOptions &options)
         : CTradingManager(constants, basket, reporter, tradingStatusManager)
     {
         _options = options;

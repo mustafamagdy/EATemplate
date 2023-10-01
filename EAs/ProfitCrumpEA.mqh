@@ -11,7 +11,7 @@ private:
 
 public:
     CProfitCrumpEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-                   RecoveryOptions &recoveryOptions, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+                   MartingaleOptions &recoveryOptions, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
         : CExpertBase(symbol, maxSpread, defaultSLPoints, defaultTPPoints, recoveryOptions, riskOptions, pnlManager, tradingStatusManager)
     {
         _indi = new CIndicatorMACD(symbol, PERIOD_M5, 12, 26, 9, PRICE_CLOSE);

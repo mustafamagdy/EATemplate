@@ -7,7 +7,7 @@ class CFirstEA : public CExpertBase
 
 public:
     CFirstEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-             RecoveryOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+             MartingaleOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
         : CExpertBase(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions, pnlManager, tradingStatusManager) {}
 
 protected:
