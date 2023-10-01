@@ -6,7 +6,7 @@
 #include "..\Constants.mqh";
 #include "..\Options.mqh";
 #include "..\Recovery\GridGapCalculator.mqh";
-#include "..\Recovery\RecoveryLotSizeCalculator.mqh";
+#include "..\Recovery\MartingaleLotSizeCalculator.mqh";
 #include "..\Signals\SignalManager.mqh";
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh";
 #include "..\UI\Reporter.mqh";
@@ -17,7 +17,7 @@ class CMartingaleManager : public CTradingManager
 
 private:
     CNormalLotSizeCalculator *_normalLotCalc;
-    CRecoveryLotSizeCalculator *_recoveryLotCalc;
+    CMartingaleLotSizeCalculator *_recoveryLotCalc;
     CGridGapCalculator *_gridGapCalc;
     CSignalManager *_signalManager;
     MartingaleOptions _options;
@@ -26,7 +26,7 @@ private:
 
 public:
     CMartingaleManager::CMartingaleManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CSignalManager *signalManager,
-                                       CNormalLotSizeCalculator *normalLotCalc, CRecoveryLotSizeCalculator *recoveryLotCalc,
+                                       CNormalLotSizeCalculator *normalLotCalc, CMartingaleLotSizeCalculator *recoveryLotCalc,
                                        CTradingStatusManager *tradingStatusManager, MartingaleOptions &options)
         : CTradingManager(constants, basket, reporter, tradingStatusManager)
     {

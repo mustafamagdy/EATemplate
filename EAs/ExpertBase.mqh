@@ -104,7 +104,7 @@ int CExpertBase::OnInit()
     _normalLotCalc = new CNormalLotSizeCalculator(_constants, _riskOptions.riskType, _riskOptions.fixedLot, _riskOptions.riskSource, _riskOptions.riskPercentage,
                                                   _riskOptions.xBalance, _riskOptions.lotPerXBalance);
 
-    _lotCalc = new CRecoveryLotSizeCalculator(_constants, _normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.gridLotSeries,
+    _lotCalc = new CMartingaleLotSizeCalculator(_constants, _normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.gridLotSeries,
                                               _recoveryOptions.lotMultiplier, _recoveryOptions.lotCustomMode);
 
     buyRecovery = new CMartingaleManager(_buyBasket, _constants, _reporter, _buySignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);

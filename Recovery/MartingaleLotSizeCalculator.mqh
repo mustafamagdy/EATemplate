@@ -6,11 +6,11 @@
 #property strict
 
 /*
-   To calculate the recovery for a grid, we need to know the following:
+   To calculate the martingale for a grid, we need to know the following:
       - The last order of type, lot size
       - The max lot size opened for an order type
 */
-class CRecoveryLotSizeCalculator : public CLotSizeCalculator
+class CMartingaleLotSizeCalculator : public CLotSizeCalculator
 {
 
 private:
@@ -28,10 +28,10 @@ private:
 
 protected:
 public:
-   CRecoveryLotSizeCalculator(CConstants *constants, CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
+   CMartingaleLotSizeCalculator(CConstants *constants, CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
                               double recoveryFixedLotSize, string recoveryLotSeries, double lotMultiplier,
                               ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode);
-   ~CRecoveryLotSizeCalculator();
+   ~CMartingaleLotSizeCalculator();
 
 public:
    double CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType);
@@ -39,7 +39,7 @@ public:
    double CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType);
 };
 
-double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType)
+double CMartingaleLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, double lastLot, double firstLot, int orderCount, const ENUM_ORDER_TYPE orderType)
 {
    // For the first order, use the normal method
    if (orderCount == 0)
@@ -93,13 +93,13 @@ double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int ris
    return _constants.MinLot(symbol);
 }
 
-double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType)
+double CMartingaleLotSizeCalculator::CalculateLotSize(string symbol, const double openPrice, const double slPrice, const ENUM_ORDER_TYPE orderType)
 {
    int points = (int)MathFloor(NormalizeDouble(MathAbs(openPrice - slPrice), _Digits) / _constants.Point(symbol));
    return CalculateLotSize(symbol, points, 0, 0, 0, orderType);
 }
 
-double CRecoveryLotSizeCalculator::CalculateNextLot(string symbol, string series, int lastOrderNumber, bool rolling)
+double CMartingaleLotSizeCalculator::CalculateNextLot(string symbol, string series, int lastOrderNumber, bool rolling)
 {
    string arSeries[];
    double values[];
@@ -132,7 +132,7 @@ double CRecoveryLotSizeCalculator::CalculateNextLot(string symbol, string series
    return _constants.MinLot(symbol);
 }
 
-double CRecoveryLotSizeCalculator::CalculateNextLotMultiplier(string symbol, double lastLot, string series, int lastOrderNumber)
+double CMartingaleLotSizeCalculator::CalculateNextLotMultiplier(string symbol, double lastLot, string series, int lastOrderNumber)
 {
    string arSeries[];
    double values[];
@@ -163,7 +163,7 @@ double CRecoveryLotSizeCalculator::CalculateNextLotMultiplier(string symbol, dou
    return result;
 }
 
-double CRecoveryLotSizeCalculator::CalculateNextLotMultiplierFromOriginal(string symbol, double firstLot, string series, int lastOrderNumber)
+double CMartingaleLotSizeCalculator::CalculateNextLotMultiplierFromOriginal(string symbol, double firstLot, string series, int lastOrderNumber)
 {
    string arSeries[];
    double values[];
@@ -194,12 +194,12 @@ double CRecoveryLotSizeCalculator::CalculateNextLotMultiplierFromOriginal(string
    return result;
 }
 
-double CRecoveryLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType)
+double CMartingaleLotSizeCalculator::CalculateLotSize(string symbol, const int riskPoints, const ENUM_ORDER_TYPE orderType)
 {
    return CalculateLotSize(symbol, riskPoints, 0, 0, 0, orderType);
 }
 
-CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CConstants *constants, CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
+CMartingaleLotSizeCalculator::CMartingaleLotSizeCalculator(CConstants *constants, CNormalLotSizeCalculator *normalLotSizeCalc, ENUM_RECOVERY_LOT_SIZE_MODE recoveryLotSizeMode,
                                                        double recoveryFixedLotSize, string recoveryLotSeries, double lotMultiplier,
                                                        ENUM_RECOVERY_FIXED_CUSTOM_MODE martingalCustomLotMode)
     : CLotSizeCalculator(constants)
@@ -212,7 +212,7 @@ CRecoveryLotSizeCalculator::CRecoveryLotSizeCalculator(CConstants *constants, CN
    _martingalCustomLotMode = martingalCustomLotMode;
 }
 
-CRecoveryLotSizeCalculator::~CRecoveryLotSizeCalculator()
+CMartingaleLotSizeCalculator::~CMartingaleLotSizeCalculator()
 {
    delete _mormalLotSizeCalc;
 }
