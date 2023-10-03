@@ -74,8 +74,7 @@ public:
     virtual bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice,
                                     string &message, Trade &newTrade, double virtualSLPrice = 0, double virtualTPPrice = 0, string comment = "")
     {
-        // if(!_tradingStatusManager.IsTradingAllowed(_basket.Symbol(), TimeCurrent(), orderType))
-        if (!_tradingStatusManager.IsTradingAllowed("", TimeCurrent(), NULL))
+        if (!_tradingStatusManager.IsTradingAllowed(_basket.Symbol(), TimeCurrent(), NULL))
         {
             _reporter.ReportWarning("Trading is not allowed because of Profit/Loss rules");
             return (false);
