@@ -48,3 +48,10 @@ struct PnLOptions
     ENUM_PNL_RESET_MODE resetMode;
     int resetAfterNMinutes;
 };
+
+struct RecoveryOptions {
+    bool useLocking;
+    double DDValue;
+    ENUM_VALUE_TYPE DDValueType;
+
+};

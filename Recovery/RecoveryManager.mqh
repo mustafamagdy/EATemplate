@@ -1,5 +1,6 @@
 #include "..\Constants.mqh";
 #include "..\Enums.mqh";
+#include "..\Options.mqh";
 #include "..\Trade\TradingManager.mqh";
 #include "..\Trade\TradingBasket.mqh";
 
@@ -12,5 +13,16 @@
  */
 class CRecoveryManager : CTradingManager {
 
+private:
+    bool useLocking;
+
+public:
+    CRecoveryManager::CRecoveryManager(RecoveryOptions options, CConstants *constnats, CTradingBasket *basket, 
+                        CReporter *reporter, CTradingStatusManager *tradingStatusManager)
+                    :TradingManager(constnats, basket, reporter, tradingStatusManager)  {
+            useLocking = options.useLocking;
+            DDValue = options.DDValue;
+            DDValueType = options.DDValueType;         
+    }
 
 };
