@@ -13,9 +13,10 @@ enum ENUM_RISK_TYPE
     RISK_TYPE_PER_XBALANCE = 2, // Lots per xBalance
 };
 
-enum ENUM_VALUE_TYPE {
-    VALUE_CURRENCY = 0;         //Currency
-    VALUE_PERCENTAGE = 1,       //Percentage
+enum ENUM_VALUE_TYPE
+{
+    VALUE_CURRENCY = 0,   // Currency
+    VALUE_PERCENTAGE = 1, // Percentage
 };
 
 enum ENUM_RISK_SOURCE
