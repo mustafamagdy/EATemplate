@@ -1,20 +1,20 @@
 
 #include "ExpertBase.mqh"
 #include "..\Signals\SignalBase.mqh"
+#include "..\Trade\TradingBasket.mqh"
 
 class CBoxSignal : public CSignalBase
 {
 private:
+    string pSymbol;
+    ENUM_SIGNAL _prevSignal;
     double rangePercentage;
     double maxRectangleSize;
-    string tradeStartTime;
-    string tradeEndTime;
     int highBarIndex;
     int lowBarIndex;
-    double* priceData; 
     double maCurrent[1];
     double maPrevious[1];
-    
+
     ENUM_SIGNAL CalcSignal();
     bool IsWithinTradeTime();
     bool IsPriceWithinMA();
@@ -22,49 +22,38 @@ private:
 protected:
 public:
     ENUM_SIGNAL GetSignal();
-    CBoxSignal(string symbol, double rangePerc, double maxRectSize, 
-               string tradeStart, string tradeEnd, int highBar, int lowBar, double* prices);
+    CBoxSignal(string symbol, double rangePerc, double maxRectSize, int highBar, int lowBar);
     ~CBoxSignal() {}
     virtual bool ValidateInputs() { return true; }
 };
 
-CBoxSignal::CBoxSignal(string symbol, double rangePerc, double maxRectSize, 
-                       string tradeStart, string tradeEnd, int highBar, int lowBar, double* prices)
+CBoxSignal::CBoxSignal(string symbol, double rangePerc, double maxRectSize, int highBar, int lowBar)
 {
     _prevSignal = SIGNAL_NEUTRAL;
     rangePercentage = rangePerc;
     maxRectangleSize = maxRectSize;
-    tradeStartTime = tradeStart;
-    tradeEndTime = tradeEnd;
+    pSymbol = symbol;
     highBarIndex = highBar;
     lowBarIndex = lowBar;
-    priceData = prices;
-}
-
-bool CBoxSignal::IsWithinTradeTime()
-{
-    datetime currentTime = TimeCurrent();
-    datetime startTime = StringToTime(tradeStartTime);
-    datetime endTime = StringToTime(tradeEndTime);
-    return (currentTime > startTime && currentTime < endTime);
 }
 
 bool CBoxSignal::IsPriceWithinMA()
 {
-    return maCurrent[0] < priceData[highBarIndex] && maCurrent[0] > priceData[lowBarIndex];
+    return maCurrent[0] < iHigh(pSymbol, PERIOD_CURRENT, highBarIndex) && maCurrent[0] > iLow(pSymbol, PERIOD_CURRENT, lowBarIndex);
 }
 
 ENUM_SIGNAL CBoxSignal::CalcSignal()
 {
-    if(rangePercentage <= maxRectangleSize && IsPriceWithinMA()) {
-        
-        if(!IsWithinTradeTime()) return SIGNAL_NEUTRAL;
-        
-        if (maCurrent[0] > maPrevious[0] && Ask > maCurrent[0]) {
+    if (rangePercentage <= maxRectangleSize && IsPriceWithinMA())
+    {
+
+        if (maCurrent[0] > maPrevious[0] && Ask > maCurrent[0])
+        {
             return SIGNAL_SELL;
-        } 
-        
-        if (maCurrent[0] < maPrevious[0] && Bid < maCurrent[0]) {
+        }
+
+        if (maCurrent[0] < maPrevious[0] && Bid < maCurrent[0])
+        {
             return SIGNAL_BUY;
         }
     }
@@ -85,13 +74,12 @@ ENUM_SIGNAL CBoxSignal::GetSignal(void)
     return SIGNAL_NEUTRAL;
 }
 
-
 class CBoxEA : public CExpertBase
 {
 
 public:
     CBoxEA(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
-             MartingaleOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+           MartingaleOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
         : CExpertBase(symbol, maxSpread, defaultSLPoints, defaultTPPoints, options, riskOptions, pnlManager, tradingStatusManager) {}
 
 protected:
@@ -100,8 +88,8 @@ protected:
     }
 
     void RegisterBuySignals(CSignalManager *signalManager)
-    {        
-        signalManager.RegisterSignal(new CBoxSignal(pSymbol));     
+    {
+        signalManager.RegisterSignal(new CBoxSignal(pSymbol, 0.5, 0.2, 0, 1));
     }
 
     void RegisterSellSignals(CSignalManager *signalManager)
@@ -109,7 +97,7 @@ protected:
         signalManager.RegisterSignal(new CBoxSignal(pSymbol));
     }
 
-   void OnBuySignal()
+    void OnBuySignal()
     {
         double ask = SymbolInfoDouble(pSymbol, SYMBOL_ASK);
         if (_buyBasket.IsEmpty())
@@ -127,7 +115,7 @@ protected:
         }
     }
 
-    void HandleTradeSignal(double price, ENUM_ORDER_TYPE direction, Basket basket, Recovery recovery, string comment)
+    void HandleTradeSignal(double price, ENUM_ORDER_TYPE direction, CTradingBasket *basket, CTradingManager *recovery, string comment)
     {
         int slPoints = _defaultSLPoints;
         int tpPoints = _defaultTPPoints;
@@ -141,5 +129,4 @@ protected:
             PrintFormat("Failed to open %s trade: %s", (direction == ORDER_TYPE_BUY ? "buy" : "sell"), message);
         }
     }
-
 };

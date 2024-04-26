@@ -20,8 +20,8 @@ protected:
         // signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
         // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
         //signalManager.RegisterSignal(new CEMASignal(pSymbol, PERIOD_M5, 21, MODE_EMA, PRICE_CLOSE, 0.05));
-        signalManager.RegisterSignal(new CSpikeTraderSignal(pSymbol,3, 0.003,0.5));
-        // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
+        //signalManager.RegisterSignal(new CSpikeTraderSignal(pSymbol,3, 0.003,0.5));
+         signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
     }
 
     void RegisterSellSignals(CSignalManager *signalManager)
@@ -29,8 +29,8 @@ protected:
         // signalManager.RegisterSignal(new CBandsSignal(pSymbol, PERIOD_M5, 20, 2.680, PRICE_CLOSE, false));
         // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_SIGNAL_LINE, 12, 26, 9, false));
         // signalManager.RegisterSignal(new CEMASignal(pSymbol, PERIOD_M5, 21, MODE_EMA, PRICE_CLOSE, 0.05));
-        signalManager.RegisterSignal(new CSpikeTraderSignal(pSymbol,3, 0.003,0.5));
-        // signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
+        //signalManager.RegisterSignal(new CSpikeTraderSignal(pSymbol,3, 0.003,0.5));
+         signalManager.RegisterSignal(new CMACDSignal(pSymbol, PERIOD_M5, MACD_HISTOGRAM, 12, 26, 9, false));
     }
 
     void OnBuySignal()
