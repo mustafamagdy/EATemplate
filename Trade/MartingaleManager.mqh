@@ -165,8 +165,9 @@ void CMartingaleManager::HandleNextOrderOpen(Trade &lastTrade, string &symbol, d
     double firstLot = _basket.FirstOrderVolume();
     double lastTradeSL = lastTrade.VirtualStopLoss();
 
-    bool hitNextOrderOpen = isItBuy ? bid <= lastTradeSL : ask >= lastTradeSL;
-
+    //bool hitNextOrderOpen = isItBuy ? bid <= lastTradeSL : ask >= lastTradeSL;
+    bool hitNextOrderOpen = isItBuy ? ask <= lastTradeSL : bid >= lastTradeSL;
+    
     if (!hitNextOrderOpen)
         return;
 
