@@ -99,7 +99,7 @@ protected:
 
     void OnBuySignal()
     {
-        double ask = SymbolInfoDouble(pSymbol, SYMBOL_ASK);
+        double ask = _constants.Ask(pSymbol);
         if (_buyBasket.IsEmpty())
         {
             HandleTradeSignal(ask, ORDER_TYPE_BUY, _buyBasket, buyRecovery, "test buy");
@@ -108,7 +108,7 @@ protected:
 
     void OnSellSignal()
     {
-        double bid = SymbolInfoDouble(pSymbol, SYMBOL_BID);
+        double bid = _constants.Bid(pSymbol);
         if (_sellBasket.IsEmpty())
         {
             HandleTradeSignal(bid, ORDER_TYPE_SELL, _sellBasket, sellRecovery, "test sell");

@@ -11,11 +11,12 @@
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh";
 #include "..\UI\Reporter.mqh";
 #include "..\Filters\FilterManager.mqh"
+#include "..\UI\UIHelper.mqh"
 
 class CMartingaleManager : public CTradingManager
 {
 
-private:
+private:    
     CNormalLotSizeCalculator *_normalLotCalc;
     CMartingaleLotSizeCalculator *_recoveryLotCalc;
     CGridGapCalculator *_gridGapCalc;
@@ -25,11 +26,11 @@ private:
     double _recoverySLPrice;
 
 public:
-    CMartingaleManager::CMartingaleManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CSignalManager *signalManager,
-                                       CNormalLotSizeCalculator *normalLotCalc, CMartingaleLotSizeCalculator *recoveryLotCalc,
+    CMartingaleManager::CMartingaleManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CUIHelper *uiHelper, 
+                                       CSignalManager *signalManager, CNormalLotSizeCalculator *normalLotCalc, CMartingaleLotSizeCalculator *recoveryLotCalc,
                                        CTradingStatusManager *tradingStatusManager, MartingaleOptions &options)
-        : CTradingManager(constants, basket, reporter, tradingStatusManager)
-    {
+        : CTradingManager(constants, uiHelper, basket, reporter, tradingStatusManager)
+    {      
         _options = options;
         _basket = basket;
         _signalManager = signalManager;
@@ -52,8 +53,6 @@ private:
     double NextLotSize(string symbol, int slPoints, double lastLot, double firstLot, ENUM_ORDER_TYPE direction);
     double CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction);
     double CalculateAvgSLPriceForMartingale(ENUM_ORDER_TYPE direction);
-    void DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style);
-    void RemovePriceLine(string name);
     string GetTPLineName();
     string GetSLLineName();
     string GetAVGOpenPriceLineName();
@@ -93,10 +92,10 @@ void CMartingaleManager::OnTick()
 
     if (_options.showSLLine && _recoverySLPrice > 0)
     {
-        DrawPriceLine(GetSLLineName(), _recoverySLPrice, clrIndianRed, STYLE_DASH);
+        _uiHelper.DrawPriceLine(GetSLLineName(), _recoverySLPrice, clrIndianRed, STYLE_DASH);
     }
 
-    DrawPriceLine(GetNextOrderLineName(), lastTradeSL, clrPink, STYLE_DASH);
+    _uiHelper.DrawPriceLine(GetNextOrderLineName(), lastTradeSL, clrPink, STYLE_DASH);
 
     if (hitTP || hitSL)
     {
@@ -238,10 +237,10 @@ void CMartingaleManager::CleanUp()
 {
     if (_basket.IsEmpty())
     {
-        RemovePriceLine(GetTPLineName());
-        RemovePriceLine(GetSLLineName());
-        RemovePriceLine(GetAVGOpenPriceLineName());
-        RemovePriceLine(GetNextOrderLineName());
+        _uiHelper.RemoveLine(GetTPLineName());
+        _uiHelper.RemoveLine(GetSLLineName());
+        _uiHelper.RemoveLine(GetAVGOpenPriceLineName());
+        _uiHelper.RemoveLine(GetNextOrderLineName());
     }
 }
 
@@ -277,11 +276,12 @@ bool CMartingaleManager::OpenTradeWithPrice(double volume, double price, ENUM_OR
     if (result)
     {
         _recoveryAvgTPrice = CalculateAvgTPPriceForMartingale(orderType);
-        DrawPriceLine(GetAVGOpenPriceLineName(), _basket.AverageOpenPrice(), clrOrange, STYLE_DASH);
+        _uiHelper.DrawPriceLine(GetAVGOpenPriceLineName(), _basket.AverageOpenPrice(), clrOrange, STYLE_DASH);
 
         if (_options.showTpLine && _recoveryAvgTPrice > 0)
         {
-            DrawPriceLine(GetTPLineName(), _recoveryAvgTPrice, clrBlue, STYLE_DASH);
+            _uiHelper.DrawPriceLine(GetTPLineName(), _recoveryAvgTPrice, clrGreen, STYLE_SOLID, 2);
+            //TODO: Remove standrad TP, SL line for the original order if exist
         }
 
         if (_options.useVirtualSLTP)
@@ -315,34 +315,6 @@ string CMartingaleManager::GetAVGOpenPriceLineName()
 string CMartingaleManager::GetNextOrderLineName()
 {
     return StringFormat("next_order_%d", _basket.MagicNumber());
-}
-
-void CMartingaleManager::RemovePriceLine(string name)
-{
-    if (ObjectFind(0, name) >= 0)
-        ObjectDelete(0, name);
-}
-
-void CMartingaleManager::DrawPriceLine(string name, double price, color clr, ENUM_LINE_STYLE style)
-{
-    if (ObjectFind(0, name) >= 0)
-        ObjectDelete(0, name);
-    if (!ObjectCreate(0, name, OBJ_HLINE, 0, 0, price))
-    {
-        // utils.LogError(__FUNCTION__, "ObjectCreate(" + name + ",RECT) failed: ");
-    }
-
-    // Change the color
-    if (!ObjectSetInteger(0, name, OBJPROP_COLOR, clr))
-    {
-        // utils.LogError(__FUNCTION__, "ObjectSet(" + name + ",color   ) [3] failed: ");
-    }
-
-    // Change the color
-    if (!ObjectSetInteger(0, name, OBJPROP_STYLE, style))
-    {
-        // utils.LogError(__FUNCTION__, "ObjectSet(" + name + ",color   ) [3] failed: ");
-    }
 }
 
 double CMartingaleManager::CalculateAvgTPPriceForMartingale(ENUM_ORDER_TYPE direction)

@@ -11,6 +11,7 @@
 #include "..\UI\Reporter.mqh"
 #include "..\Common.mqh"
 #include "..\Constants.mqh"
+#include "..\UI\UIHelper.mqh"
 
 enum ENUM_BASKET_STATUS
 {
@@ -24,6 +25,7 @@ class CTradingBasket : public CObject
 private:
     CReporter *_reporter;
     CConstants *_constants;
+    CUIHelper *_uiHelper;
 
     Trade _trades[];
     ENUM_BASKET_STATUS _basketStatus;
@@ -37,7 +39,7 @@ private:
     double totalCommission;
 
 public:
-    CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CConstants *constants);
+    CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CConstants *constants, CUIHelper *uiHelper);
     ~CTradingBasket();
 
 public:
@@ -60,19 +62,13 @@ public:
 public:
     void SetBasketAvgTpPrice(double tpPrice);
 
-// The MQL5 (MetaQuotes Language 5) is a programming language used for developing trading strategies, indicators, scripts, and function libraries for the MetaTrader 5 trading platform. The language is used to create automated trading systems, commonly known as Expert Advisors (EAs).
-// 
-// The function `OpenTradeWithPoints` is not a standard function in MQL5; it seems like a custom function that might have been written by a user for a specific trading strategy. Since the function is not part of the standard MQL5 library, I'll create a hypothetical example of what this function might look like and explain how it could work.
-// 
-
-// Hypothetical example of a custom function to open a trade with a specific number of points
 bool OpenTradeWithPoints(string symbol, ENUM_ORDER_TYPE orderType, double lotSize, int points, int slippage, double stopLoss, double takeProfit) {
-    // Calculate the desired entry price based on the order type and number of points
+
     double entryPrice;
     if (orderType == ORDER_TYPE_BUY) {
-        entryPrice = SymbolInfoDouble(symbol, SYMBOL_ASK) + points * _Point;
+        entryPrice = (_constants.Ask(symbol) + points) * _constants.Point(symbol);
     } else if (orderType == ORDER_TYPE_SELL) {
-        entryPrice = SymbolInfoDouble(symbol, SYMBOL_BID) - points * _Point;
+        entryPrice = (_constants.Bid(symbol) - points) * _constants.Point(symbol);
     } else {
         // Unsupported order type
         return false;
@@ -104,64 +100,7 @@ bool OpenTradeWithPoints(string symbol, ENUM_ORDER_TYPE orderType, double lotSiz
     return true;
 }
 
-// 
-// In this hypothetical `OpenTradeWithPoints` function, the following parameters are used:
-// 
-// - `symbol`: The trading symbol (currency pair, stock, etc.) for the trade.
-// - `orderType`: The type of order to be placed (buy or sell).
-// - `lotSize`: The size of the trade in lots.
-// - `points`: The number of points to add or subtract from the current price to determine the entry price.
-// - `slippage`: The maximum price slippage allowed for the trade.
-// - `stopLoss`: The stop loss price.
-// - `takeProfit`: The take profit price.
-// 
-// The function calculates the entry price by adding or subtracting the specified number of points from the current ask or bid price, depending on whether it's a buy or sell order. It then creates a trade request structure (`MqlTradeRequest`) and sends the trade request using the `OrderSend` function. If the trade is successful, the function returns `true`; otherwise, it prints an error message and returns `false`.
-// 
-// Please note that this is a hypothetical example, and the actual `OpenTradeWithPoints` function in your context may work differently. It's essential to understand the specific implementation details of any custom function in MQL5 to use it correctly.
-// 
     bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string &message, Trade &newTrade, int virtualSLPoints, int virtualTPPoints, string comment);
-// The function signature you've provided for `OpenTradeWithPoints` seems to be a custom function that is not part of the standard MQL5 library. However, I can explain what this function might do based on the parameters and typical MQL5 conventions.
-// 
-// The `OpenTradeWithPoints` function appears to be designed to open a trade with a specified volume, price, order type, and to set stop loss (SL) and take profit (TP) levels based on points, rather than price levels. Additionally, it seems to support virtual stop loss and take profit levels, which might be used for internal monitoring rather than actual order levels set on the broker's server. The function returns a boolean value indicating success or failure and also provides a message and a `Trade` object as output parameters.
-// 
-// Here's a breakdown of the parameters:
-// 
-// - `double volume`: The amount of lots to trade.
-// - `double price`: The entry price for the trade.
-// - `ENUM_ORDER_TYPE orderType`: The type of order to place (e.g., `ORDER_TYPE_BUY` or `ORDER_TYPE_SELL`).
-// - `int slPoints`: The number of points away from the entry price to set the stop loss.
-// - `int tpPoints`: The number of points away from the entry price to set the take profit.
-// - `string &message`: A reference to a string variable that will be used to store any message generated by the function (e.g., error messages).
-// - `Trade &newTrade`: A reference to a `Trade` object that will be used to store information about the new trade if it is successfully opened.
-// - `int virtualSLPoints`: The number of points away from the entry price to set a virtual stop loss (not sent to the broker).
-// - `int virtualTPPoints`: The number of points away from the entry price to set a virtual take profit (not sent to the broker).
-// - `string comment`: A comment to attach to the trade for identification or other purposes.
-// 
-// Here's an example of how the function might be implemented in MQL5, assuming that `Trade` is a custom class:
-// 
-
-//bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string &message, Trade &newTrade, int virtualSLPoints, int virtualTPPoints, string comment) {
-    // Calculate the actual price levels for SL and TP based on the entry price and points
-//    double slPrice = (orderType == ORDER_TYPE_BUY) ? price - slPoints * _Point : price + slPoints * _Point;
-//    double tpPrice = (orderType == ORDER_TYPE_BUY) ? price + tpPoints * _Point : price - tpPoints * _Point;
-
-    // Open the trade using the MQL5 OrderSend function or similar
-    // ...
-
-    // Check for errors and set the message accordingly
-    // ...
-
-    // If the trade is opened successfully, set the newTrade object's properties
-    // ...
-
-    // Return true if the trade was opened successfully, false otherwise
-    //return tradeOpenedSuccessfully;
-//}
-
-// 
-// Please note that this is a hypothetical implementation. The actual implementation would depend on the details of the `Trade` class and the specific requirements of the trading strategy. Additionally, error checking and handling would be necessary to ensure that the function behaves correctly in all scenarios.
-// 
-
     bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string &message, Trade &newTrade, double virtualSLPrice, double virtualTPPrice, string comment);
     void SetBasketSlPrice(double slPrice);
     void SwitchTradeToVirtualSLTP(ulong ticket);
@@ -183,12 +122,13 @@ private:
     void UpdateCurrentTrades();
 };
 
-CTradingBasket::CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CConstants *constants)
+CTradingBasket::CTradingBasket(string symbol, long magicNumber, CReporter *reporter, CConstants *constants, CUIHelper *uiHelper)
 {
     pSymbol = symbol;
     _magicNumber = magicNumber;
     _reporter = reporter;
     _constants = constants;
+    _uiHelper = uiHelper;
     _basketStatus = BASKET_CLOSED;
     ArrayResize(_trades, 0);
 }
@@ -384,13 +324,14 @@ void CTradingBasket::SwitchTradeToVirtualSLTP(ulong ticket)
 bool CTradingBasket::OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string &message, Trade &newTrade, int virtualSLPoints, int virtualTPPoints, string comment)
 {
     double slPrice = 0, tpPrice = 0;
-    double ask = SymbolInfoDouble(pSymbol, SYMBOL_ASK);
-    double bid = SymbolInfoDouble(pSymbol, SYMBOL_BID);
+    double ask = _constants.Ask(pSymbol);
+    double bid = _constants.Bid(pSymbol);
     double spread = ask - bid;
     int spread_points = (int)MathRound(spread / _constants.Point(pSymbol));
     if (slPoints <= spread_points)
     {
         message = "SL points is less than the spread points";
+        _reporter.ReportError(message);
         return (false);
     }
 
@@ -418,8 +359,8 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
 
     if (_basketStatus == BASKET_CLOSING)
     {
-        // TODO: error reporting
         message = StringFormat("Basket is %s, cannot receive orders now", EnumToString(_basketStatus));
+        _reporter.ReportError(message);
         return (false);
     }
 
@@ -443,11 +384,13 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
         _basketStatus = BASKET_OPEN;
         lastOrderCount++;
         totalCommission += _deal.Commission();
+        
+        //TODO: Show TP, SL Line here for the first position if count == 1 now
     }
     else
     {
-        // TODO
         message = StringFormat("Order failed: %s", result.retcode);
+        _reporter.ReportError(message);
         return (false);
     }
 

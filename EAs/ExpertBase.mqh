@@ -1,6 +1,8 @@
 #include <Object.mqh>
 #include "..\Common.mqh"
 #include "..\Enums.mqh"
+#include "..\UI\UIHelper.mqh"
+
 #include "..\Trade\TradingBasket.mqh"
 #include "..\Candles\CandleTypes.mqh"
 #include "..\RiskManagement\NormalLotSizeCalculator.mqh"
@@ -38,6 +40,7 @@ private:
 
 protected:
     CConstants *_constants;
+    CUIHelper *_uiHelper;
     int _defaultSLPoints;
     int _defaultTPPoints;
     CReporter *_reporter;
@@ -85,7 +88,8 @@ int CExpertBase::OnInit()
 {
     _reporter = new CReporter();
     _constants = new CConstants();
-
+    _uiHelper = new CUIHelper();
+    
     _filterManager = new CFilterManager();
     RegisterFilters(_filterManager);
 
@@ -95,8 +99,8 @@ int CExpertBase::OnInit()
     _sellSignalManager = new CSignalManager();
     RegisterSellSignals(_sellSignalManager);
 
-    _buyBasket = new CTradingBasket(pSymbol, 14324, _reporter, _constants);
-    _sellBasket = new CTradingBasket(pSymbol, 45332, _reporter, _constants);
+    _buyBasket = new CTradingBasket(pSymbol, 14324, _reporter, _constants, _uiHelper);
+    _sellBasket = new CTradingBasket(pSymbol, 45332, _reporter, _constants, _uiHelper);
 
     _pnlManager.RegisterBasket(_buyBasket);
     _pnlManager.RegisterBasket(_sellBasket);
@@ -107,8 +111,8 @@ int CExpertBase::OnInit()
     _lotCalc = new CMartingaleLotSizeCalculator(_constants, _normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.gridLotSeries,
                                               _recoveryOptions.lotMultiplier, _recoveryOptions.lotCustomMode);
 
-    buyRecovery = new CMartingaleManager(_buyBasket, _constants, _reporter, _buySignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
-    sellRecovery = new CMartingaleManager(_sellBasket, _constants, _reporter, _sellSignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
+    buyRecovery = new CMartingaleManager(_buyBasket, _constants, _reporter, _uiHelper, _buySignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
+    sellRecovery = new CMartingaleManager(_sellBasket, _constants, _reporter, _uiHelper, _sellSignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
 
     if (!ValidateInputs())
     {
@@ -172,6 +176,7 @@ void CExpertBase::OnTick()
 void CExpertBase::~CExpertBase()
 {
     SafeDeletePointer(_constants);
+    SafeDeletePointer(_uiHelper);
     SafeDeletePointer(_buyBasket);
     SafeDeletePointer(_sellBasket);
     SafeDeletePointer(_reporter);

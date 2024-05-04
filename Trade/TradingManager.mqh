@@ -12,6 +12,7 @@
 #include "..\Filters\FilterManager.mqh"
 #include "..\Constants.mqh"
 #include "..\UI\Reporter.mqh"
+#include "..\UI\UIHelper.mqh"
 #ifdef __MQL4__
 #include "Trade_mql4.mqh"
 #include "PositionInfo.mqh"
@@ -22,6 +23,7 @@ class CTradingManager : public CObject
 
 protected:
     CConstants *_constants;
+    CUIHelper *_uiHelper;
     CTradingBasket *_basket;
     CReporter *_reporter;
     CTradingStatusManager *_tradingStatusManager;
@@ -30,9 +32,10 @@ protected:
     CPositionInfo _position;
 
 public:
-    CTradingManager(CConstants *constnats, CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
+    CTradingManager(CConstants *constnats, CUIHelper *uiHelper, CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
     {
         _constants = constnats;
+        _uiHelper = uiHelper;
         _basket = basket;
         _reporter = reporter;
         _tradingStatusManager = tradingStatusManager;
@@ -44,13 +47,14 @@ public:
     {
         double slPrice = 0, tpPrice = 0;
         double virtualSLPrice = 0, virtualTPPrice = 0;
-        double ask = SymbolInfoDouble(_basket.Symbol(), SYMBOL_ASK);
-        double bid = SymbolInfoDouble(_basket.Symbol(), SYMBOL_BID);
+        double ask = _constants.Ask(_basket.Symbol());
+        double bid = _constants.Bid(_basket.Symbol());
         double spread = ask - bid;
         int spread_points = (int)MathRound(spread / _constants.Point(_basket.Symbol()));
         if (slPoints <= spread_points && virtualSLPoints <= spread_points)
         {
             message = "SL points is less than the spread points";
+            _reporter.ReportError(message);
             return (false);
         }
 

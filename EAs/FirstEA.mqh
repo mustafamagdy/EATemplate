@@ -37,7 +37,7 @@ protected:
     {
         int slPoints = _defaultSLPoints;
         int tpPoints = _defaultTPPoints;
-        double ask = SymbolInfoDouble(pSymbol, SYMBOL_ASK);
+        double ask = _constants.Ask(pSymbol);
 
         if (_buyBasket.IsEmpty())
         {
@@ -59,7 +59,7 @@ protected:
     {
         int slPoints = _defaultSLPoints;
         int tpPoints = _defaultTPPoints;
-        double bid = SymbolInfoDouble(pSymbol, SYMBOL_BID);
+        double bid = _constants.Bid(pSymbol);
 
         if (_sellBasket.IsEmpty())
         {

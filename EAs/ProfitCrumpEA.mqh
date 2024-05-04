@@ -34,7 +34,7 @@ protected:
 
     void OnSignal(bool isSellSignal)
     {
-        double price = isSellSignal ? SymbolInfoDouble(pSymbol, SYMBOL_BID) : SymbolInfoDouble(pSymbol, SYMBOL_ASK);
+        double price = isSellSignal ? _constants.Bid(pSymbol) : _constants.Ask(pSymbol);
 
         int factor = 10000;
 

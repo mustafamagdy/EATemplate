@@ -3,13 +3,14 @@
 #include "..\UI\Reporter.mqh"
 #include "..\Filters\FilterManager.mqh"
 #include "..\Constants.mqh"
+#include "..\UI\UIHelper.mqh"
 
 class CNormalTradingManager : public CTradingManager
 {
 
 public:
-    CNormalTradingManager(CConstants *constants, CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
-        : CTradingManager(constants, basket, reporter, tradingStatusManager)
+    CNormalTradingManager(CConstants *constants, CUIHelper *uiHelper, CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
+        : CTradingManager(constants, uiHelper, basket, reporter, tradingStatusManager)
     {
     }
 
