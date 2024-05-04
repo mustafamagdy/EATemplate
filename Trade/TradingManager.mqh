@@ -87,7 +87,7 @@ public:
         bool success = _basket.OpenTradeWithPrice(volume, price, orderType, slPrice, tpPrice, message, newTrade, virtualSLPrice, virtualTPPrice, comment);
         if (success)
         {
-            _reporter.ReportTradeOpen(orderType);
+            _reporter.ReportTradeOpen(orderType);          
         }
         return success;
     }

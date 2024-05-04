@@ -58,47 +58,11 @@ public:
     bool LastTrade(Trade &trade);
     int LastOrderCount() { return lastOrderCount; }
     double FirstOrderVolume() { return firstOrderVolume; }
+    string BasketId() { return StringFormat("basket_%d", _magicNumber); }
+    string GetTpLineName() { return StringFormat("%s_tp", BasketId()); }
 
 public:
     void SetBasketAvgTpPrice(double tpPrice);
-
-bool OpenTradeWithPoints(string symbol, ENUM_ORDER_TYPE orderType, double lotSize, int points, int slippage, double stopLoss, double takeProfit) {
-
-    double entryPrice;
-    if (orderType == ORDER_TYPE_BUY) {
-        entryPrice = (_constants.Ask(symbol) + points) * _constants.Point(symbol);
-    } else if (orderType == ORDER_TYPE_SELL) {
-        entryPrice = (_constants.Bid(symbol) - points) * _constants.Point(symbol);
-    } else {
-        // Unsupported order type
-        return false;
-    }
-
-    // Create a request structure for the trade operation
-    MqlTradeRequest request;
-    ZeroMemory(request);
-    request.action = TRADE_ACTION_DEAL; // Immediate execution
-    request.symbol = symbol; // Trading symbol
-    request.volume = lotSize; // Volume in lots
-    request.type = orderType; // Order type (buy or sell)
-    request.price = entryPrice; // Entry price
-    request.sl = stopLoss; // Stop loss price
-    request.tp = takeProfit; // Take profit price
-    request.deviation = slippage; // Maximum price slippage in points
-    request.magic = 0; // Magic number to identify trades from this EA
-    request.comment = "Trade opened with points"; // Comment for the trade
-
-    // Send the trade request
-    MqlTradeResult result;
-    if (!OrderSend(request, result)) {
-        // If the trade request failed, print the error
-        PrintFormat("Trade failed: error code %d", result.retcode);
-        return false;
-    }
-
-    // Trade was successful
-    return true;
-}
 
     bool OpenTradeWithPoints(double volume, double price, ENUM_ORDER_TYPE orderType, int slPoints, int tpPoints, string &message, Trade &newTrade, int virtualSLPoints, int virtualTPPoints, string comment);
     bool OpenTradeWithPrice(double volume, double price, ENUM_ORDER_TYPE orderType, double slPrice, double tpPrice, string &message, Trade &newTrade, double virtualSLPrice, double virtualTPPrice, string comment);
@@ -130,7 +94,7 @@ CTradingBasket::CTradingBasket(string symbol, long magicNumber, CReporter *repor
     _constants = constants;
     _uiHelper = uiHelper;
     _basketStatus = BASKET_CLOSED;
-    ArrayResize(_trades, 0);
+    ArrayResize(_trades, 0);    
 }
 
 CTradingBasket::~CTradingBasket()
@@ -383,9 +347,12 @@ bool CTradingBasket::OpenTradeWithPrice(double volume, double price, ENUM_ORDER_
         newTrade = trade;
         _basketStatus = BASKET_OPEN;
         lastOrderCount++;
-        totalCommission += _deal.Commission();
+        totalCommission += _deal.Commission(); 
         
-        //TODO: Show TP, SL Line here for the first position if count == 1 now
+       if(Count() == 1)
+       {
+           _uiHelper.DrawPriceLine(GetTpLineName(), virtualTPPrice, clrGreen, STYLE_SOLID, 2);
+       }       
     }
     else
     {
@@ -513,8 +480,10 @@ void CTradingBasket::UpdateCurrentTrades()
     {
         _basketStatus = BASKET_CLOSED;
         lastOrderCount = 0;
+        _uiHelper.RemoveLine(GetTpLineName());
     }
 }
+
 
 void CTradingBasket::OnTick()
 {

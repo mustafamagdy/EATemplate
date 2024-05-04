@@ -281,7 +281,7 @@ bool CMartingaleManager::OpenTradeWithPrice(double volume, double price, ENUM_OR
         if (_options.showTpLine && _recoveryAvgTPrice > 0)
         {
             _uiHelper.DrawPriceLine(GetTPLineName(), _recoveryAvgTPrice, clrGreen, STYLE_SOLID, 2);
-            //TODO: Remove standrad TP, SL line for the original order if exist
+            _uiHelper.RemoveLine(_basket.GetTpLineName());
         }
 
         if (_options.useVirtualSLTP)
