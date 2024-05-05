@@ -1,3 +1,6 @@
+#define __RECOVERY_EA__
+
+
 #include "ExpertBase.mqh"
 #include "..\Signals\EMATrendSignal.mqh"
 #include "..\Signals\SpikeSignal.mqh"

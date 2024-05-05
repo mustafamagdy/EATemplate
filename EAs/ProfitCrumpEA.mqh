@@ -1,3 +1,5 @@
+#define __RECOVERY_EA__
+
 #include "..\Common.mqh"
 #include "ExpertBase.mqh"
 #include "..\Indicators\IndicatorMACD.mqh"
@@ -125,7 +127,7 @@ double point = _constants.Point(pSymbol);
             string message;
             string comment = direction == ORDER_TYPE_BUY ? "Open buy order" : "Open sell order";
             Trade trade;
-            if (!sellRecovery.OpenTradeWithPoints(lots, price, direction, 0, 0, message, trade, slPoints, tpPoints, comment))
+            if (!sellManager.OpenTradeWithPoints(lots, price, direction, 0, 0, message, trade, slPoints, tpPoints, comment))
             {
                 PrintFormat("Failed to open sell trade: %s", message);
             }

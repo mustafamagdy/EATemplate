@@ -9,55 +9,76 @@ class CNormalTradingManager : public CTradingManager
 {
 
 public:
-    CNormalTradingManager(CConstants *constants, CUIHelper *uiHelper, CTradingBasket *basket, CReporter *reporter, CTradingStatusManager *tradingStatusManager)
+    CNormalTradingManager(CTradingBasket *basket, CConstants *constants, CReporter *reporter, CUIHelper *uiHelper, CTradingStatusManager *tradingStatusManager)
         : CTradingManager(constants, uiHelper, basket, reporter, tradingStatusManager)
     {
     }
 
+private:
+   void CleanUp();
+   bool CheckHitSL(Trade &firstTrade, double directionFactor, bool isItBuy, double bid, double ask);
+   
 public:
     void OnTick();
 };
 
+void CNormalTradingManager::CleanUp()
+{
+    if (_basket.IsEmpty())
+    {
+        _uiHelper.RemoveLine(_basket.GetTpLineName());        
+    }
+}
+
 void CNormalTradingManager::OnTick()
 {
-    //  Close orders and remove them if SL/TP hit
-    for (int i = _basket.Count() - 1; i >= 0; i--)
+    if (_basket.Status() != BASKET_OPEN || _basket.IsEmpty())
     {
-        Trade trade;
-        if (!_basket.GetTradeByIndex(i, trade))
-            continue;
-
-        ulong ticket = trade.Ticket();
-        if (!PositionSelectByTicket(ticket))
-        {
-            continue;
-        }
-
-        // check virtual SL/TP if either, close and remove
-        string symbol = PositionGetString(POSITION_SYMBOL);
-        ENUM_POSITION_TYPE type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
-        double bidPrice = SymbolInfoDouble(symbol, SYMBOL_BID);
-        double askPrice = SymbolInfoDouble(symbol, SYMBOL_ASK);
-        double takeProfit = trade.VirtualTakeProfit();
-        double stopLoss = trade.VirtualStopLoss();
-        bool closed = false;
-
-        if ((type == POSITION_TYPE_BUY && bidPrice >= takeProfit) ||
-            (type == POSITION_TYPE_SELL && askPrice <= takeProfit))
-        {
-            closed = _trade.PositionClose(ticket, ULONG_MAX);
-        }
-        else if ((type == POSITION_TYPE_BUY && bidPrice <= stopLoss) ||
-                 (type == POSITION_TYPE_SELL && askPrice >= stopLoss))
-        {
-            closed = _trade.PositionClose(ticket, ULONG_MAX);
-        }
-
-        if (closed)
-        {
-            _basket.RemoveTradeByIndex(i);
-        }
+        CleanUp();
+        CTradingManager::OnTick();
+        return;
     }
 
+    Trade firstTrade, lastTrade;
+    _basket.FirstTrade(firstTrade);
+    _basket.LastTrade(lastTrade);
+
+    string symbol = _basket.Symbol();
+    bool isItBuy = lastTrade.OrderType() == ORDER_TYPE_BUY;
+    double ask = _constants.Ask(symbol);
+    double bid = _constants.Bid(symbol);
+    double spread = ask - bid;
+    double lastTradeSL = lastTrade.VirtualStopLoss();
+    double directionFactor = (isItBuy ? -1 : 1);
+
+    double totalCommissionAndSwap = _basket.TotalCommission() + _basket.TotalSwap();
+    double swapCommPerTrade = (totalCommissionAndSwap / _basket.Volume()) / _constants.Point(_basket.Symbol());
+    double basketAvgOpenPrice = _basket.AverageOpenPrice();
+    double defaultTP = 200 * _constants.Point(_basket.Symbol());
+    double adjustedTP = isItBuy ? (basketAvgOpenPrice - swapCommPerTrade + defaultTP) : (basketAvgOpenPrice + swapCommPerTrade - defaultTP);
+
+    bool hitTP = isItBuy ? bid >= adjustedTP : ask <= adjustedTP;
+
+    bool hitSL = CheckHitSL(firstTrade, directionFactor, isItBuy, bid, ask);
+
+    if (hitTP || hitSL)
+    {
+        _basket.CloseBasketOrders();
+    }
+    
+    CleanUp();
     CTradingManager::OnTick();
+}
+
+
+bool CNormalTradingManager::CheckHitSL(Trade &firstTrade, double directionFactor, bool isItBuy, double bid, double ask)
+{
+    double defaultSLPoints = 200 * _constants.Point(_basket.Symbol());
+    bool hitSL = false;
+     
+    double basketAvgOpenPrice = _basket.AverageOpenPrice();
+    double slPrice = (defaultSLPoints * directionFactor) + basketAvgOpenPrice;
+    hitSL = slPrice > 0 && (isItBuy ? bid <= slPrice : ask >= slPrice);
+    
+    return hitSL;
 }

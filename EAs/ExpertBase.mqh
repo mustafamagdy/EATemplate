@@ -31,11 +31,13 @@ private:
     CSignalManager *_buySignalManager;
     CSignalManager *_sellSignalManager;
 
-    CNormalLotSizeCalculator *_normalLotCalc;
     CFilterManager *_filterManager;
     int _maxSpread;
-
+    
+#ifdef __RECOVERY_EA__
     MartingaleOptions _recoveryOptions;
+#endif 
+    
     RiskOptions _riskOptions;
 
 protected:
@@ -44,19 +46,27 @@ protected:
     int _defaultSLPoints;
     int _defaultTPPoints;
     CReporter *_reporter;
-    CTradingManager *buyRecovery;
+
+    CNormalLotSizeCalculator *_normalLotCalc;
     CTradingBasket *_buyBasket;
-
-    CTradingManager *sellRecovery;
     CTradingBasket *_sellBasket;
-
+    CTradingManager *buyManager;
+    CTradingManager *sellManager;
+           
+#ifdef __RECOVERY_EA__
     CLotSizeCalculator *_lotCalc;
+#endif 
 
     string pSymbol;
 
 public:
+#ifdef __RECOVERY_EA__
     CExpertBase(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
                 MartingaleOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager);
+#else                 
+    CExpertBase(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
+                RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager);
+#endif                 
     ~CExpertBase();
 
 public:
@@ -71,14 +81,23 @@ public:
     void OnTick();
 };
 
+#ifdef __RECOVERY_EA__
 CExpertBase::CExpertBase(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
                          MartingaleOptions &options, RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+#else
+CExpertBase::CExpertBase(string symbol, int maxSpread, int defaultSLPoints, int defaultTPPoints,
+                         RiskOptions &riskOptions, CPnLManager *pnlManager, CTradingStatusManager *tradingStatusManager)
+#endif 
 {
     pSymbol = symbol;
     _maxSpread = maxSpread;
     _defaultSLPoints = defaultSLPoints;
     _defaultTPPoints = defaultTPPoints;
+    
+#ifdef __RECOVERY_EA__    
     _recoveryOptions = options;
+#endif     
+
     _riskOptions = riskOptions;
     _pnlManager = pnlManager;
     _tradingStatusManager = tradingStatusManager;
@@ -108,11 +127,16 @@ int CExpertBase::OnInit()
     _normalLotCalc = new CNormalLotSizeCalculator(_constants, _riskOptions.riskType, _riskOptions.fixedLot, _riskOptions.riskSource, _riskOptions.riskPercentage,
                                                   _riskOptions.xBalance, _riskOptions.lotPerXBalance);
 
+#ifdef __RECOVERY_EA__
     _lotCalc = new CMartingaleLotSizeCalculator(_constants, _normalLotCalc, _recoveryOptions.lotMode, _recoveryOptions.fixedLot, _recoveryOptions.gridLotSeries,
                                               _recoveryOptions.lotMultiplier, _recoveryOptions.lotCustomMode);
-
-    buyRecovery = new CMartingaleManager(_buyBasket, _constants, _reporter, _uiHelper, _buySignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
-    sellRecovery = new CMartingaleManager(_sellBasket, _constants, _reporter, _uiHelper, _sellSignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
+                                              
+    buyManager = new CMartingaleManager(_buyBasket, _constants, _reporter, _uiHelper, _buySignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
+    sellManager = new CMartingaleManager(_sellBasket, _constants, _reporter, _uiHelper, _sellSignalManager, _normalLotCalc, _lotCalc, _tradingStatusManager, _recoveryOptions);
+#else 
+    buyManager = new CNormalTradingManager(_buyBasket, _constants, _reporter, _uiHelper, _tradingStatusManager);
+    sellManager = new CNormalTradingManager(_sellBasket, _constants, _reporter, _uiHelper, _tradingStatusManager);    
+#endif 
 
     if (!ValidateInputs())
     {
@@ -136,11 +160,13 @@ bool CExpertBase::ValidateInputs()
         _reporter.ReportError("Default TP Points must be greater than 0");
     }
 
+#ifdef __RECOVERY_EA__
     if (_recoveryOptions.recoverySLPoints < 0)
     {
         isValid = false;
         _reporter.ReportError("Max Loss Points must be greater than or equal to 0");
     }
+#endif 
 
     isValid &= _filterManager.ValidateFilters();
     isValid &= _buySignalManager.ValidateSignals();
@@ -151,8 +177,8 @@ bool CExpertBase::ValidateInputs()
 
 void CExpertBase::OnTick()
 {
-    buyRecovery.OnTick();
-    sellRecovery.OnTick();
+    buyManager.OnTick();
+    sellManager.OnTick();
 
     bool sellSignal = _sellSignalManager.GetSignalWithAnd(SIGNAL_SELL);
     bool buySignal = _buySignalManager.GetSignalWithAnd(SIGNAL_BUY);
@@ -181,9 +207,11 @@ void CExpertBase::~CExpertBase()
     SafeDeletePointer(_sellBasket);
     SafeDeletePointer(_reporter);
     SafeDeletePointer(_normalLotCalc);
+#ifdef __RECOVERY_EA__    
     SafeDeletePointer(_lotCalc);
-    SafeDeletePointer(buyRecovery);
-    SafeDeletePointer(sellRecovery);
+    SafeDeletePointer(buyManager);
+    SafeDeletePointer(sellManager);
+#endif     
     SafeDeletePointer(_buySignalManager);
     SafeDeletePointer(_sellSignalManager);
     SafeDeletePointer(_filterManager);
