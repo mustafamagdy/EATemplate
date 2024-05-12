@@ -11,8 +11,7 @@ class CAlligatorSignal : public CSignalBase
 private:
    CIndicatorAlligator *_indi;
    string _symbol;
-   ENUM_TIMEFRAMES _timeframe;
-   double _threshold; // Threshold for slope to consider trend
+   ENUM_TIMEFRAMES _timeframe;   
    ENUM_SIGNAL _prevSignal;
 
 private:
@@ -24,7 +23,7 @@ public:
 
 public:
    CAlligatorSignal(string symbol, ENUM_TIMEFRAMES timeframe, int jawsPeriod, int jawsPeriodShift, int teethPeriod, int teethPeriodShift, 
-                        int lipsPeriod, int lipsPeriodShift, int method, int priceType, double threshold);
+                        int lipsPeriod, int lipsPeriodShift, int method, int priceType);
    ~CAlligatorSignal()
    {
       delete _indi;
@@ -37,45 +36,45 @@ public:
 };
 
 CAlligatorSignal::CAlligatorSignal(string symbol, ENUM_TIMEFRAMES timeframe, int jawsPeriod, int jawsPeriodShift, int teethPeriod, int teethPeriodShift, 
-                        int lipsPeriod, int lipsPeriodShift, int method, int priceType, double threshold)
+                        int lipsPeriod, int lipsPeriodShift, int method, int priceType)
 {
    _indi = new CIndicatorAlligator(symbol, timeframe, jawsPeriod, jawsPeriodShift, teethPeriod, teethPeriodShift, lipsPeriod, lipsPeriodShift, 
                                    method, priceType);
    _symbol = symbol;
    _timeframe = timeframe;
-   _threshold = threshold;
-
+   
    _prevSignal = SIGNAL_NEUTRAL;
 }
 
 ENUM_SIGNAL CAlligatorSignal::CalcSignal()
 {
-    double currentSlope = _indi.GetValue(MAIN_LINE, 0) - _indi.GetValue(MAIN_LINE, 5);
-
-    double emaBar1 = _indi.GetValue(MAIN_LINE, 1);
-    double closeBar1 = iClose(_symbol, _timeframe, 1);
-    double highBar1 = iHigh(_symbol, _timeframe, 1);
-    double lowBar1 = iLow(_symbol, _timeframe, 1);
-
-    double openBar2 = iOpen(_symbol, _timeframe, 0);
-    double closeBar2 = iClose(_symbol, _timeframe, 0);
-
-    double thresholdPips = 50 * _Point;  
-
-    if (currentSlope < _threshold && 
-        fabs(highBar1 - emaBar1) <= thresholdPips && 
-        closeBar1 < emaBar1 && 
-        closeBar2 < openBar2)
-    {
-        return SIGNAL_SELL;
-    }
-    else if (currentSlope > _threshold && 
-             fabs(lowBar1 - emaBar1) <= thresholdPips && 
-             closeBar1 > emaBar1 && 
-             closeBar2 > openBar2)
-    {
-        return SIGNAL_BUY;
-    }
+   int bar = 1;
+   double jaw = _indi.GetValue(0, bar);
+   double teeth = _indi.GetValue(1, bar);
+   double lip = _indi.GetValue(2, bar);
+   double close1 = iClose(_symbol, _timeframe, bar);
+   double close2 = iClose(_symbol, _timeframe, bar+1);
+   double close3 = iClose(_symbol, _timeframe, bar+2);
+   
+   static string last_premise = "";
+   if(lip > teeth && teeth > jaw) {
+      last_premise = "buy";
+   } else if(lip < teeth && teeth < jaw) {
+      last_premise = "sell";
+   }
+   
+   Comment(StringFormat("Signal is %s", last_premise));
+   
+   
+   if(last_premise == "buy") {
+      if(close2 < lip && close1 > lip) {
+         return SIGNAL_BUY;
+      }
+   } else if(last_premise == "sell") {
+      if(close2 > lip && close1 < lip) {
+         return SIGNAL_SELL;
+      }
+   }
 
     return SIGNAL_NEUTRAL; 
 }
